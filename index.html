@@ -72,6 +72,9 @@
   .toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:10px}
   .spin{display:inline-block;width:16px;height:16px;border:3px solid #fff5;border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite;vertical-align:middle;margin-inline-start:6px}
   @keyframes s{to{transform:rotate(360deg)}}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;max-width:92%;z-index:20;padding:11px 16px;border-radius:14px;font-size:13px;line-height:1.7;color:#fff;background:#3b2c2f;box-shadow:0 6px 22px rgba(0,0,0,.3);text-align:center}
+  .toast.ok{background:var(--ok)}
+  .toast.err{background:var(--err)}
   /* admin */
   .arow{background:#faf6f0;border-radius:12px;padding:10px;margin-bottom:8px;display:grid;gap:6px}
   .arow label{font-size:11px;color:var(--muted);display:block;margin-bottom:2px}
@@ -117,6 +120,8 @@
   </div>
 </div>
 
+<div id="toast" class="toast hidden"></div>
+
 <header>
   <h1 id="title">مدرسة هوس ايروف للشمامسة</h1>
   <p>نظام تسجيل الحضور</p>
@@ -125,6 +130,7 @@
     <span class="chip">حضور اليوم: <b id="countChip">0</b></span>
     <span class="chip hidden" id="queueChip">⏳ <b id="queueNum">0</b> بانتظار الرفع</span>
     <span class="chip ltr" id="userChip">-</span>
+    <span class="chip btnchip" id="refreshChip" style="background:#c9a24b;font-weight:700">🔄 تحديث</span>
     <span class="chip btnchip" id="reportChip" style="background:#c9a24b;font-weight:700">📊 التقرير</span>
     <span class="chip btnchip hidden" id="adminChip" style="background:#c9a24b;font-weight:700">⚙ الإعدادات</span>
     <span class="chip btnchip" id="logoutChip" style="background:rgba(255,255,255,.14)">تغيير الحساب ⎋</span>
@@ -187,9 +193,10 @@
       <h2>سجلات اليوم من حسابك (<b id="mineCount">0</b>)</h2>
       <div class="log" id="log"></div>
     </section>
-    <div class="hint" style="text-align:center;margin-top:14px">الإصدار 3.6.1</div>
-    <div class="hint" id="srvInfo" style="text-align:center;padding-top:0;direction:ltr"></div>
   </div>
+
+  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 3.7 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
+  <div class="hint" id="srvInfo" style="text-align:center;padding-top:0;direction:ltr"></div>
 </main>
 
 <!-- ================= صفحة التقرير ================= -->
@@ -290,19 +297,28 @@
   </section>
 </main>
 
-<script src="config.js"></script>
+<script>
+  // تحميل config.js: بعد "مسح الكاش" يُضاف رقم لضمان جلب أحدث نسخة من الخادم وليس من كاش المتصفح
+  document.write('<script src="config.js' + (/[?&]r=\d+/.test(location.search) ? '?r=' + Date.now() : '') + '"><' + '/script>');
+</script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
   var API_URL = (window.API_URL || '').trim();
-  var NEED_SERVER = '3.6.1';                         // أقل نسخة خادم تعمل مع هذه الصفحة
+  var NEED_SERVER = '3.7';                           // أقل نسخة خادم تعمل مع هذه الصفحة
   function urlTag() { var m = API_URL.match(/\/s\/([^\/]+)\/exec/); var id = m ? m[1] : API_URL; return id.length > 14 ? id.slice(0, 6) + '…' + id.slice(-8) : id; }
-  function srvOld(ver) { return !ver || String(ver) < NEED_SERVER; }
+  function verLess(a, b) {
+    var x = String(a || '0').split('.').map(Number), y = String(b || '0').split('.').map(Number);
+    for (var i = 0; i < 3; i++) { var p = x[i] || 0, q = y[i] || 0; if (p < q) return true; if (p > q) return false; }
+    return false;
+  }
+  function srvOld(ver) { return !ver || verLess(ver, NEED_SERVER); }
   function srvNote() { return ' (رابط الخادم المستخدم في config.js: ' + urlTag() + ')'; }
   function setSrvInfo(ver) {
     var e = document.getElementById('srvInfo'); if (!e) return;
     e.textContent = srvOld(ver) ? ('⚠ Server: ' + (ver || 'OLD') + ' | ' + urlTag()) : ('Server: v' + ver + ' ✔ | ' + urlTag());
     e.style.color = srvOld(ver) ? '#b3261e' : '#7b6e70';
   }
+
   var $ = function (id) { return document.getElementById(id); };
   var CODE_RE = /^MK\d{8}$/;
   var LS_DATA = 'att_data_v3', LS_Q = 'att_queue_v3', LS_MINE = 'att_mine_v3';
@@ -310,8 +326,8 @@
   var AUTH = { email: '', pin: '' };
   var D = { version: '', semester: '', title: '', students: [], map: {}, search: [] };
   var ATT = {};                 // أكواد حضرت اليوم (من كل المستخدمين)
-  var MINE = [];                // [[code, name, time]] ما سجّله هذا المستخدم اليوم
-  var S = { current: null, scanning: false, paused: false, busy: false, sending: false, lastBad: 0, last: { code: '', t: 0 }, isAdmin: false, roleKnown: false, cardCode: '' };
+  var MINE = [];                // [[code, name, time]] ما سجّله هذا المستخدم اليوم من هذه الصفحة (الإيميل + web app)
+  var S = { current: null, scanning: false, paused: false, busy: false, sending: false, lastBad: 0, last: { code: '', t: 0 }, isAdmin: false, roleKnown: false, cardCode: '', refreshing: false };
   var ITEMS = [];               // عناصر الحفظ (pending / sending / ok / dup / err)
   var qr = null, retryTimer = null;
 
@@ -344,6 +360,10 @@
   }
   function clearStatus() { show($('status'), false); }
   function blockScreen(t, m) { $('blockTitle').textContent = t; $('blockMsg').textContent = m || ''; show($('block'), true); }
+  function toast(text, type) {
+    var t = $('toast'); t.className = 'toast ' + (type || ''); t.textContent = text;
+    clearTimeout(S.toastT); S.toastT = setTimeout(function () { show(t, false); }, 4500);
+  }
   var AUTH_CODES = ['NOT_AUTHORIZED', 'BAD_EMAIL', 'PIN_REQUIRED', 'BAD_PIN'];
 
   /* ---------- local data cache ---------- */
@@ -478,6 +498,40 @@
       }
     });
   }
+
+  /* ---------- زر التحديث: قراءة آخر 300 سجل من شيت Attendance ---------- */
+  function doRefresh() {
+    if (!AUTH.email || S.refreshing) return;
+    S.refreshing = true;
+    var chip = $('refreshChip'); chip.textContent = '⏳ جاري التحديث...';
+    api('refresh').then(function (r) {
+      S.refreshing = false; chip.textContent = '🔄 تحديث';
+      if (!r || !r.ok) {
+        if (r && AUTH_CODES.indexOf(r.code) > -1) { showLogin(r.message, r.code === 'PIN_REQUIRED' || r.code === 'BAD_PIN'); return; }
+        if (r && r.code === 'BAD_ACTION') { toast('الخادم لا يدعم التحديث بعد (نسخته ' + (r.ver || 'قديمة') + '). الصق Code.gs الجديد وانشر New version.' + srvNote(), 'err'); return; }
+        toast(r ? r.message : 'خطأ', 'err'); return;
+      }
+      setSrvInfo(r.ver);
+      ATT = {}; (r.attended || []).forEach(function (c) { ATT[c] = true; });
+      MINE = r.mine || []; saveMine();
+      setCount(r.todayCount); renderLog(); updateQueueChip();
+      toast('✔ تم التحديث من الشيت (آخر ' + r.limit + ' سجل) · سجلاتك اليوم: ' + MINE.length + ' · إجمالي حضور اليوم: ' + r.todayCount, 'ok');
+      if (!$('reportView').classList.contains('hidden')) loadReport();
+      processQueue();
+    }).catch(function (e) { S.refreshing = false; chip.textContent = '🔄 تحديث'; toast(errText(e), 'err'); });
+  }
+  $('refreshChip').addEventListener('click', doRefresh);
+
+  /* ---------- مسح كاش الصفحة (لا يمس حسابك ولا التسجيلات غير المرفوعة) ---------- */
+  $('hardLink').addEventListener('click', function (ev) {
+    ev.preventDefault();
+    if (!confirm('سيتم مسح نسخة الصفحة المخزنة في هذا الجهاز وإعادة تحميلها من الخادم. حسابك والتسجيلات غير المرفوعة لن تتأثر. متابعة؟')) return;
+    try { localStorage.removeItem(LS_DATA); localStorage.removeItem(LS_MINE); } catch (e) {}
+    var jobs = [];
+    if ('serviceWorker' in navigator) jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) { return Promise.all(regs.map(function (r) { return r.unregister(); })); }));
+    if (window.caches) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
+    Promise.all(jobs).catch(function () {}).then(function () { location.replace(location.pathname + '?r=' + Date.now()); });
+  });
 
   $('loginBtn').addEventListener('click', function () {
     AUTH.email = $('emailInput').value.trim().toLowerCase();
@@ -1096,7 +1150,9 @@
   /* ---------- boot ---------- */
   loadSaved();
   loadQueue(); loadMine(); updateQueueChip(); renderLog();      // الطابور وسجلات اليوم المحفوظة تُحمَّل فورًا قبل أي مسح جديد
-  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) { navigator.serviceWorker.register('sw.js').catch(function () {}); }
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    navigator.serviceWorker.register('sw.js').then(function (reg) { try { reg.update(); } catch (e) {} }).catch(function () {});
+  }
   if (!API_URL || API_URL.indexOf('PASTE_') === 0) {
     blockScreen('الإعداد غير مكتمل', 'ضع رابط الـ Web App (/exec) داخل ملف config.js بجانب index.html.');
   } else if (AUTH.email) {
