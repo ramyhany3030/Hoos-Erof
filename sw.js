@@ -1,5 +1,5 @@
 /* يخزّن الصفحة ومكتبة الكاميرا ليفتح النظام حتى لو النت مقطوع (بعد أول فتح بالإنترنت) */
-var CACHE = 'att-shell-v3-3';
+var CACHE = 'att-shell-v3-4';
 var CDN = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
 var SHELL = ['./', './index.html', './config.js'];
 
