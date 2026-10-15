@@ -187,7 +187,8 @@
       <h2>سجلات اليوم من حسابك (<b id="mineCount">0</b>)</h2>
       <div class="log" id="log"></div>
     </section>
-    <div class="hint" style="text-align:center;margin-top:14px">الإصدار 3.6</div>
+    <div class="hint" style="text-align:center;margin-top:14px">الإصدار 3.6.1</div>
+    <div class="hint" id="srvInfo" style="text-align:center;padding-top:0;direction:ltr"></div>
   </div>
 </main>
 
@@ -293,6 +294,15 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
   var API_URL = (window.API_URL || '').trim();
+  var NEED_SERVER = '3.6.1';                         // أقل نسخة خادم تعمل مع هذه الصفحة
+  function urlTag() { var m = API_URL.match(/\/s\/([^\/]+)\/exec/); var id = m ? m[1] : API_URL; return id.length > 14 ? id.slice(0, 6) + '…' + id.slice(-8) : id; }
+  function srvOld(ver) { return !ver || String(ver) < NEED_SERVER; }
+  function srvNote() { return ' (رابط الخادم المستخدم في config.js: ' + urlTag() + ')'; }
+  function setSrvInfo(ver) {
+    var e = document.getElementById('srvInfo'); if (!e) return;
+    e.textContent = srvOld(ver) ? ('⚠ Server: ' + (ver || 'OLD') + ' | ' + urlTag()) : ('Server: v' + ver + ' ✔ | ' + urlTag());
+    e.style.color = srvOld(ver) ? '#b3261e' : '#7b6e70';
+  }
   var $ = function (id) { return document.getElementById(id); };
   var CODE_RE = /^MK\d{8}$/;
   var LS_DATA = 'att_data_v3', LS_Q = 'att_queue_v3', LS_MINE = 'att_mine_v3';
@@ -444,6 +454,7 @@
       saveAuth();
       S.isAdmin = !!r.isAdmin;
       S.roleKnown = (r.isAdmin !== undefined);
+      setSrvInfo(r.ver);
       D.title = r.title; D.semester = r.semester;
       if (r.closed) {
         $('closedMsg').textContent = r.message;
@@ -457,7 +468,7 @@
       if (r.mine) { MINE = r.mine; saveMine(); }
       setCount(r.todayCount);
       renderHeader(); show($('block'), false);
-      if (!S.roleKnown) setStatus('warn', 'الخادم ما زال بنسخة قديمة (Code.gs). الصق الكود الجديد ثم Deploy ← Manage deployments ← Edit ← New version.');
+      if (srvOld(r.ver)) setStatus('warn', 'الخادم بنسخة قديمة (' + (r.ver || 'غير محددة') + '). الصق Code.gs الجديد ثم Deploy ← Manage deployments ← Edit ← New version، وتأكد أن رابط /exec في config.js هو نفس رابط هذا النشر.' + srvNote());
       renderLog(); updateQueueChip(); processQueue();
     }).catch(function (e) {
       if (!hasLocal) blockScreen('تعذر الاتصال', errText(e));
@@ -669,7 +680,7 @@
     no_ref: 'لا يوجد اسم صورة لهذا الطالب في العمود K',
     no_student: 'الطالب غير موجود في Codes',
     not_found: 'لم يتم العثور على ملف الصورة داخل مجلد Drive (تأكد من الاسم)',
-    BAD_ACTION: 'الخادم قديم: الصق Code.gs الجديد ثم Deploy ← New version'
+    BAD_ACTION: 'الخادم قديم: الصق Code.gs الجديد ثم Deploy ← New version (الرابط ' + urlTag() + ')'
   };
   function whyImg(code, text) {
     if (S.cardCode !== code) return;
@@ -847,7 +858,7 @@
       b.disabled = false;
       if (!r || !r.ok) {
         if (r && AUTH_CODES.indexOf(r.code) > -1) { closeReport(); showLogin(r.message, r.code === 'PIN_REQUIRED' || r.code === 'BAD_PIN'); return; }
-        repMsg('err', r ? (r.code === 'BAD_ACTION' ? 'الخادم قديم: الصق Code.gs الجديد ثم Deploy ← New version' : r.message) : 'خطأ'); return;
+        repMsg('err', r ? (r.code === 'BAD_ACTION' ? ('الخادم لا يعرف طلب التقرير: النشر الذي يعمل عليه الرابط ' + urlTag() + ' نسخته ' + (r.ver || 'قديمة') + '. المطلوب ' + NEED_SERVER + ' أو أحدث.') : r.message) : 'خطأ'); return;
       }
       repMsg('', '');
       REP = r; REPOPTS = opts;
