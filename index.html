@@ -27,9 +27,16 @@
   .btn.ghost{background:#f1ecec;color:var(--ink)}
   .row{display:flex;gap:8px}
   .row>*{flex:1}
-  #reader{width:100%;border-radius:12px;overflow:hidden;margin-bottom:10px;display:none;background:#000}
+  #readerWrap{position:relative;display:none;width:100%;border-radius:12px;overflow:hidden;margin-bottom:10px;background:#000}
+  #reader{width:100%}
   #reader video{width:100%!important}
-  input[type=text],textarea,select{width:100%;font-family:inherit;font-size:16px;padding:11px;border:1px solid #d9cfcf;border-radius:12px;background:#fff;color:var(--ink)}
+  .scanmark{position:absolute;left:50%;top:50%;width:104px;height:104px;margin:-52px 0 0 -52px;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;z-index:5;box-shadow:0 6px 22px rgba(0,0,0,.45)}
+  .scanmark.ok{background:rgba(30,123,70,.96)}
+  .scanmark.err{background:rgba(179,38,30,.96)}
+  .scanmark svg{width:62px;height:62px}
+  .scanmark.show{animation:pop 1.1s ease forwards}
+  @keyframes pop{0%{opacity:0;transform:scale(.4)}15%{opacity:1;transform:scale(1.12)}30%{transform:scale(1)}78%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+  input[type=text],input[type=date],textarea,select{width:100%;font-family:inherit;font-size:16px;padding:11px;border:1px solid #d9cfcf;border-radius:12px;background:#fff;color:var(--ink)}
   textarea{resize:none;height:64px}
   input:focus,textarea:focus,select:focus{outline:2px solid var(--gold);border-color:var(--gold)}
   #results{margin-top:8px;max-height:260px;overflow:auto;border-radius:12px}
@@ -71,6 +78,28 @@
   .arow .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .arow .chk{display:flex;align-items:center;gap:6px;font-size:14px;padding-top:18px}
   .ltr{direction:ltr;text-align:left}
+  /* report */
+  .sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .sum .cell b{display:block;font-size:22px;color:var(--maroon)}
+  .mod{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(90,22,32,.08);padding:12px 14px;margin-top:12px}
+  .mod .mh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:700;color:var(--maroon);font-size:15px}
+  .mod .num{direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+  .meter{height:8px;background:#f0e8e8;border-radius:99px;overflow:hidden;margin:6px 0 8px}
+  .meter i{display:block;height:100%;background:var(--ok);border-radius:99px}
+  .cls{display:flex;justify-content:space-between;gap:8px;padding:7px 2px;border-top:1px dashed #e8dede;font-size:13px}
+  .cls .num{direction:ltr;unicode-bidi:isolate;white-space:nowrap;font-weight:700}
+  .cls small{color:var(--muted);font-weight:400}
+  .clsw{border-top:1px dashed #e8dede}
+  .clsw .cls{border-top:0;cursor:pointer;padding:9px 2px}
+  .clsw .cls:active{background:var(--gold-l)}
+  .clsw .arrow{display:inline-block;width:16px;color:var(--maroon)}
+  .names{background:#faf6f0;border-radius:10px;padding:4px 10px;margin:0 0 8px}
+  .names .nm{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed #eadfdf;font-size:13px}
+  .names .nm:last-child{border-bottom:0}
+  .names .nm small{color:var(--muted);direction:ltr;unicode-bidi:isolate;margin:0 8px}
+  .names .nm .t{color:var(--muted);white-space:nowrap}
+  .dayrow{cursor:pointer}
+  .dayrow:active{background:var(--gold-l)}
 </style>
 </head>
 <body>
@@ -96,6 +125,7 @@
     <span class="chip">حضور اليوم: <b id="countChip">0</b></span>
     <span class="chip hidden" id="queueChip">⏳ <b id="queueNum">0</b> بانتظار الرفع</span>
     <span class="chip ltr" id="userChip">-</span>
+    <span class="chip btnchip" id="reportChip" style="background:#c9a24b;font-weight:700">📊 التقرير</span>
     <span class="chip btnchip hidden" id="adminChip" style="background:#c9a24b;font-weight:700">⚙ الإعدادات</span>
     <span class="chip btnchip" id="logoutChip" style="background:rgba(255,255,255,.14)">تغيير الحساب ⎋</span>
   </div>
@@ -108,7 +138,10 @@
   <div id="scanWrap">
     <section class="card">
       <h2>📷 مسح QR</h2>
-      <div id="reader"></div>
+      <div id="readerWrap">
+        <div id="reader"></div>
+        <div id="scanMark" class="scanmark"></div>
+      </div>
       <div class="row">
         <button class="btn" id="camBtn">فتح الكاميرا</button>
         <button class="btn alt" id="photoBtn">مسح من صورة</button>
@@ -154,8 +187,70 @@
       <h2>سجلات اليوم من حسابك (<b id="mineCount">0</b>)</h2>
       <div class="log" id="log"></div>
     </section>
-    <div class="hint" style="text-align:center;margin-top:14px">الإصدار 3.4</div>
+    <div class="hint" style="text-align:center;margin-top:14px">الإصدار 3.6</div>
   </div>
+</main>
+
+<!-- ================= صفحة التقرير ================= -->
+<main id="reportView" class="hidden">
+  <section class="card">
+    <div class="row" style="align-items:center">
+      <h2 style="margin:0">📊 تقرير الحضور</h2>
+      <button class="btn ghost" id="repBack" style="flex:.4">رجوع ←</button>
+    </div>
+    <div id="repSub" class="hint"></div>
+  </section>
+
+  <section class="card hidden" id="repFilter">
+    <h2>الفترة (للأدمن)</h2>
+    <select id="repMode">
+      <option value="today">اليوم</option>
+      <option value="day">يوم محدد</option>
+      <option value="range">فترة من - إلى</option>
+      <option value="all">كل الأيام</option>
+    </select>
+    <div class="row hidden" id="repDates" style="margin-top:8px">
+      <div><div class="hint" style="padding:0 0 2px">من</div><input type="date" id="repFrom" class="ltr"></div>
+      <div id="repToWrap"><div class="hint" style="padding:0 0 2px">إلى</div><input type="date" id="repTo" class="ltr"></div>
+    </div>
+    <button class="btn" id="repGo" style="margin-top:10px">عرض التقرير</button>
+  </section>
+
+  <div id="repMsg" class="msg hidden"></div>
+
+  <section class="card hidden" id="repSummary">
+    <div class="sum">
+      <div class="cell"><small id="sumLbl1">حضروا</small><b id="sumAtt">0</b></div>
+      <div class="cell"><small>المسجلون</small><b id="sumEnr">0</b></div>
+      <div class="cell"><small id="sumLbl3">النسبة</small><b id="sumPct">0%</b></div>
+    </div>
+    <div class="hint" id="sumNote" style="padding-bottom:0"></div>
+  </section>
+
+  <section class="card hidden" id="repTools">
+    <h2>تصفية وأسماء الحاضرين</h2>
+    <div class="row">
+      <div><div class="hint" style="padding:0 0 2px">الموديول</div><select id="fMod"><option value="">كل الموديولات</option></select></div>
+      <div><div class="hint" style="padding:0 0 2px">الفصل</div><select id="fCls"><option value="">كل الفصول</option></select></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn alt" id="repNames">👥 إظهار كل الأسماء</button>
+      <button class="btn alt hidden" id="repExport">⬇ تصدير التقرير (Excel)</button>
+    </div>
+    <div class="hint" style="padding-bottom:0">اضغط على أي فصل لعرض أسماء الحاضرين فيه.</div>
+  </section>
+
+  <div id="repModules"></div>
+
+  <section class="card hidden" id="repDaysCard">
+    <h2>الحضور حسب اليوم <small style="color:#7b6e70;font-weight:400">(اضغط على يوم لعرضه)</small></h2>
+    <div class="hint hidden" id="repDaysNote" style="padding-top:0">الأعداد هنا إجمالية لكل الموديولات والفصول (بدون تصفية).</div>
+    <div class="log" id="repDays"></div>
+  </section>
+
+  <section class="card">
+    <button class="btn alt" id="repRefresh">🔄 تحديث</button>
+  </section>
 </main>
 
 <!-- ================= صفحة الأدمن ================= -->
@@ -383,10 +478,26 @@
   $('logoutChip').addEventListener('click', function () {
     var pend = ITEMS.filter(function (i) { return i.state === 'pending' || i.state === 'sending'; }).length;
     if (pend && !confirm('يوجد ' + pend + ' تسجيل لم يُرفع بعد. هل تريد تغيير الحساب؟ (سيتم رفعها عند الدخول مرة أخرى)')) return;
-    stopScan(); clearAuth(); clearData(); MINE = []; renderLog(); resetCard(); showLogin('');
+    stopScan(); clearAuth(); clearData(); MINE = []; renderLog(); resetCard();
+    show($('reportView'), false); show($('adminView'), false); show($('mainView'), true);
+    showLogin('');
   });
   $('autoSave').checked = (function () { try { return localStorage.getItem('autoSave') !== '0'; } catch (e) { return true; } })();
   $('autoSave').addEventListener('change', function () { try { localStorage.setItem('autoSave', this.checked ? '1' : '0'); } catch (e) {} });
+
+  /* ---------- علامة النجاح/الفشل في منتصف الكاميرا ---------- */
+  var SVG_OK = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.6 4.6L19 7.4" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var SVG_ERR = '<svg viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/></svg>';
+  var markTimer = null;
+  function flashMark(type) {
+    var m = $('scanMark');
+    m.innerHTML = type === 'ok' ? SVG_OK : SVG_ERR;
+    m.className = 'scanmark ' + type;
+    void m.offsetWidth;                      // لإعادة تشغيل الحركة عند التكرار السريع
+    m.classList.add('show');
+    clearTimeout(markTimer);
+    markTimer = setTimeout(function () { m.classList.remove('show'); }, 1200);
+  }
 
   /* ---------- camera ---------- */
   function getQr() {
@@ -401,7 +512,7 @@
   }
   function startScan() {
     show($('camMsg'), false);
-    $('reader').style.display = 'block';
+    $('readerWrap').style.display = 'block';
     return getQr().start(
       { facingMode: 'environment' },
       { fps: 12, qrbox: function (w, h) { var s = Math.floor(Math.min(w, h) * 0.7); return { width: s, height: s }; } },
@@ -409,16 +520,16 @@
     ).then(function () {
       S.scanning = true; S.paused = false; $('camBtn').textContent = 'إيقاف الكاميرا';
     }).catch(function (e) {
-      $('reader').style.display = 'none';
+      $('readerWrap').style.display = 'none';
       var m = $('camMsg');
       m.textContent = 'تعذر تشغيل الكاميرا. اسمح بالوصول للكاميرا من إعدادات المتصفح، أو استخدم "مسح من صورة" أو البحث اليدوي. (' + errText(e) + ')';
       show(m, true);
     });
   }
   function stopScan() {
-    if (!qr || !S.scanning) { $('reader').style.display = 'none'; return Promise.resolve(); }
+    if (!qr || !S.scanning) { $('readerWrap').style.display = 'none'; return Promise.resolve(); }
     return qr.stop().catch(function () {}).then(function () {
-      S.scanning = false; S.paused = false; $('reader').style.display = 'none'; $('camBtn').textContent = 'فتح الكاميرا';
+      S.scanning = false; S.paused = false; $('readerWrap').style.display = 'none'; $('camBtn').textContent = 'فتح الكاميرا';
     });
   }
   function pauseScan() { try { if (S.scanning && !S.paused) { qr.pause(true); S.paused = true; } } catch (e) {} }
@@ -430,7 +541,7 @@
     var now = Date.now();
     if (code === S.last.code && now - S.last.t < 4000) return;   // نفس الكود: تجاهل
     if (!CODE_RE.test(code)) {
-      if (now - S.lastBad > 2500) { S.lastBad = now; beep(false); setStatus('err', 'QR غير صالح: ' + esc(code.substring(0, 40))); }
+      if (now - S.lastBad > 2500) { S.lastBad = now; beep(false); flashMark('err'); setStatus('err', 'QR غير صالح: ' + esc(code.substring(0, 40))); }
       return;
     }
     S.last = { code: code, t: now };
@@ -489,7 +600,7 @@
     api('preview', { code: code }).then(function (r) {
       if (!r || !r.ok) {
         if (r && AUTH_CODES.indexOf(r.code) > -1) { showLogin(r.message, r.code === 'PIN_REQUIRED' || r.code === 'BAD_PIN'); return; }
-        setStatus('err', esc(r ? r.message : 'خطأ')); beep(false); return;
+        setStatus('err', esc(r ? r.message : 'خطأ')); beep(false); if (fromScan) flashMark('err'); return;
       }
       clearStatus();
       var rec = [r.code, r.name, 1, String(r.module), String(r.cls), r.image || ''];
@@ -508,10 +619,10 @@
     clearStatus();
     var code = s[0];
     if (ATT[code] || isPending(code)) {
-      showCard(s, 'dup'); beep(false); return;
+      showCard(s, 'dup'); beep(false); if (fromScan) flashMark('err'); return;
     }
     if (fromScan && $('autoSave').checked) {
-      enqueue(s, ''); showCard(s, 'pending'); beep(true); return;
+      enqueue(s, ''); showCard(s, 'pending'); beep(true); flashMark('ok'); return;
     }
     if (fromScan) pauseScan();
     showCard(s, 'confirm');
@@ -595,6 +706,7 @@
     var s = S.current;
     $('saveBtn').disabled = true;
     enqueue(s, $('notes').value);
+    if (S.scanning) flashMark('ok');
     show($('confirmBox'), false); setBadge('pending', '⏳ جاري الحفظ...');
     $('search').value = ''; $('results').innerHTML = '';
     resumeScan();
@@ -688,6 +800,201 @@
     show($('logCard'), rows.length > 0);
   }
 
+  /* ================= Report (أعداد وأسماء الحاضرين لكل موديول وفصل) ================= */
+  var REP = null, REPOPTS = { mode: 'today' }, REPNAMES = false;
+  function fmtDate(ymd) { var m = String(ymd || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? (m[2] + '/' + m[3] + '/' + m[1]) : ''; }
+  function pct(a, b) { return b > 0 ? Math.round(a * 100 / b) : 0; }
+  function repMsg(type, text) { var m = $('repMsg'); m.className = 'msg ' + type; m.textContent = text; show(m, !!text); }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function natCmp(a, b) {
+    var ax = String(a).match(/\d+|\D+/g) || [], bx = String(b).match(/\d+|\D+/g) || [];
+    for (var i = 0; i < Math.min(ax.length, bx.length); i++) {
+      if (ax[i] === bx[i]) continue;
+      if (/^\d+$/.test(ax[i]) && /^\d+$/.test(bx[i])) { var d = Number(ax[i]) - Number(bx[i]); if (d) return d; }
+      else return ax[i] < bx[i] ? -1 : 1;
+    }
+    return ax.length - bx.length;
+  }
+
+  function openReport() {
+    stopScan();
+    show($('mainView'), false); show($('adminView'), false); show($('reportView'), true);
+    show($('repFilter'), S.isAdmin);
+    $('repMode').value = 'today'; syncRepMode();
+    loadReport();
+  }
+  function closeReport() { show($('reportView'), false); show($('mainView'), true); }
+
+  function syncRepMode() {
+    var m = $('repMode').value;
+    show($('repDates'), m === 'day' || m === 'range');
+    show($('repToWrap'), m === 'range');
+  }
+
+  function loadReport() {
+    var opts = { mode: 'today' };
+    if (S.isAdmin) {
+      opts.mode = $('repMode').value;
+      if (opts.mode === 'day' || opts.mode === 'range') {
+        opts.from = $('repFrom').value;
+        if (opts.mode === 'range') opts.to = $('repTo').value;
+        if (!opts.from || (opts.mode === 'range' && !opts.to)) { repMsg('warn', 'اختر التاريخ أولًا.'); return; }
+      }
+    }
+    repMsg('warn', 'جاري تحميل التقرير...');
+    var b = $('repGo'); b.disabled = true;
+    api('report', { opts: opts }).then(function (r) {
+      b.disabled = false;
+      if (!r || !r.ok) {
+        if (r && AUTH_CODES.indexOf(r.code) > -1) { closeReport(); showLogin(r.message, r.code === 'PIN_REQUIRED' || r.code === 'BAD_PIN'); return; }
+        repMsg('err', r ? (r.code === 'BAD_ACTION' ? 'الخادم قديم: الصق Code.gs الجديد ثم Deploy ← New version' : r.message) : 'خطأ'); return;
+      }
+      repMsg('', '');
+      REP = r; REPOPTS = opts;
+      show($('repTools'), true); show($('repExport'), S.isAdmin);
+      buildFilters(); renderReport();
+    }).catch(function (e) { b.disabled = false; repMsg('err', errText(e)); });
+  }
+
+  function setOptions(sel, items, allLabel) {
+    var cur = sel.value;
+    sel.innerHTML = '';
+    var o = document.createElement('option'); o.value = ''; o.textContent = allLabel; sel.appendChild(o);
+    items.forEach(function (t) { var x = document.createElement('option'); x.value = t; x.textContent = t; sel.appendChild(x); });
+    sel.value = items.indexOf(cur) > -1 ? cur : '';
+  }
+  function classNames(modName) {
+    var seen = {}, out = [];
+    REP.modules.forEach(function (m) {
+      if (modName && m.name !== modName) return;
+      m.classes.forEach(function (c) { if (!seen[c.name]) { seen[c.name] = 1; out.push(c.name); } });
+    });
+    return out.sort(natCmp);
+  }
+  function buildFilters() {
+    setOptions($('fMod'), REP.modules.map(function (m) { return m.name; }), 'كل الموديولات');
+    setOptions($('fCls'), classNames($('fMod').value), 'كل الفصول');
+  }
+  function sumOf(list, key) { return list.reduce(function (n, x) { return n + x[key]; }, 0); }
+
+  function renderReport() {
+    var r = REP; if (!r) return;
+    var multi = (r.mode === 'range' || r.mode === 'all');
+    var fm = $('fMod').value, fc = $('fCls').value, filtered = !!(fm || fc);
+    var title = r.mode === 'today' ? ('اليوم ' + fmtDate(r.from))
+      : r.mode === 'day' ? ('يوم ' + fmtDate(r.from))
+      : r.mode === 'range' ? ('من ' + fmtDate(r.from) + ' إلى ' + fmtDate(r.to))
+      : 'كل الأيام';
+    $('repSub').textContent = 'الفصل الدراسي ' + r.semester + ' · ' + title + (S.isAdmin ? '' : ' · (اليوم الحالي فقط)')
+      + (filtered ? ' · تصفية: ' + [fm && ('الموديول ' + fm), fc && ('الفصل ' + fc)].filter(Boolean).join(' / ') : '');
+
+    // الموديولات بعد التصفية (مع إعادة حساب أعداد الموديول عند تصفية الفصل)
+    var mods = r.modules.filter(function (m) { return !fm || m.name === fm; }).map(function (m) {
+      var cls = m.classes.filter(function (c) { return !fc || c.name === fc; });
+      return { name: m.name, classes: cls, attended: fc ? sumOf(cls, 'attended') : m.attended, enrolled: fc ? sumOf(cls, 'enrolled') : m.enrolled };
+    }).filter(function (m) { return m.classes.length; });
+
+    var totAtt = r.totalAttended, totEnr = r.enrolledTotal, totRec = r.totalRecords;
+    if (filtered) {
+      totAtt = sumOf(mods, 'attended'); totEnr = sumOf(mods, 'enrolled');
+      totRec = mods.reduce(function (n, m) { return n + sumOf(m.classes, 'records'); }, 0);
+    }
+    $('sumLbl1').textContent = multi ? 'طلاب حضروا' : 'حضروا';
+    $('sumAtt').textContent = totAtt;
+    $('sumEnr').textContent = totEnr;
+    $('sumLbl3').textContent = multi ? 'عدد الأيام' : 'النسبة';
+    $('sumPct').textContent = multi ? r.daysCount : (pct(totAtt, totEnr) + '%');
+    $('sumNote').textContent = multi ? ('إجمالي مرات الحضور: ' + totRec + ' (طالب × يوم)') : '';
+    show($('repSummary'), true);
+    $('repNames').textContent = REPNAMES ? '👥 إخفاء الأسماء' : '👥 إظهار كل الأسماء';
+
+    var box = $('repModules'); box.innerHTML = '';
+    if (!mods.length) { box.appendChild(el('div', 'hint', r.modules.length ? 'لا توجد نتائج بهذه التصفية.' : 'لا توجد بيانات لهذا الفصل الدراسي.')); }
+    mods.forEach(function (m) {
+      var card = el('div', 'mod');
+      var head = el('div', 'mh');
+      head.appendChild(el('span', '', 'الموديول: ' + m.name));
+      head.appendChild(el('span', 'num', m.attended + ' / ' + m.enrolled + (multi ? '' : '  (' + pct(m.attended, m.enrolled) + '%)')));
+      card.appendChild(head);
+      var meter = el('div', 'meter'); var fill = el('i'); fill.style.width = Math.min(100, pct(m.attended, m.enrolled)) + '%'; meter.appendChild(fill);
+      card.appendChild(meter);
+      m.classes.forEach(function (c) {
+        var wrap = el('div', 'clsw');
+        var open = REPNAMES || !!fc;
+        var row = el('div', 'cls');
+        var left = el('span', '');
+        var arrow = el('span', 'arrow', open ? '▾' : '▸'); left.appendChild(arrow);
+        left.appendChild(document.createTextNode('الفصل: ' + c.name));
+        if (multi) { left.appendChild(document.createTextNode(' ')); left.appendChild(el('small', '', '(مرات الحضور ' + c.records + ')')); }
+        row.appendChild(left);
+        row.appendChild(el('span', 'num', c.attended + ' / ' + c.enrolled));
+        var names = el('div', 'names' + (open ? '' : ' hidden'));
+        if (!c.people.length) names.appendChild(el('div', 'hint', 'لا يوجد حضور'));
+        c.people.forEach(function (p) {
+          var line = el('div', 'nm');
+          var nm = el('span', '', p[1]); nm.appendChild(el('small', '', p[0]));
+          line.appendChild(nm);
+          line.appendChild(el('span', 't', typeof p[2] === 'number' ? (p[2] + ' يوم') : (p[2] || '')));
+          names.appendChild(line);
+        });
+        row.addEventListener('click', function () { var hid = names.classList.toggle('hidden'); arrow.textContent = hid ? '▸' : '▾'; });
+        wrap.appendChild(row); wrap.appendChild(names);
+        card.appendChild(wrap);
+      });
+      box.appendChild(card);
+    });
+
+    var dl = $('repDays'); dl.innerHTML = '';
+    show($('repDaysCard'), multi && r.days.length > 0);
+    show($('repDaysNote'), filtered);
+    r.days.forEach(function (d) {
+      var row = el('div', 'dayrow');
+      row.appendChild(el('span', '', fmtDate(d.date)));
+      row.appendChild(el('span', 't', d.count + ' طالب'));
+      row.addEventListener('click', function () { $('repMode').value = 'day'; syncRepMode(); $('repFrom').value = d.date; loadReport(); window.scrollTo(0, 0); });
+      dl.appendChild(row);
+    });
+  }
+
+  /* ---------- تصدير التقرير (أدمن) : CSV يفتح في Excel مع العربية ---------- */
+  function csvCell(v) {
+    var s = String(v == null ? '' : v);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;                 // منع تنفيذ معادلات Excel
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  function downloadCsv(name, rows) {
+    var text = '\uFEFF' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n');
+    var blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  }
+  function exportReport() {
+    var b = $('repExport'); b.disabled = true; b.textContent = 'جاري التجهيز...';
+    var fm = $('fMod').value, fc = $('fCls').value;
+    api('reportRows', { opts: REPOPTS }).then(function (r) {
+      b.disabled = false; b.textContent = '⬇ تصدير التقرير (Excel)';
+      if (!r || !r.ok) { repMsg('err', r ? r.message : 'خطأ'); return; }
+      var rows = r.rows.filter(function (x) { return (!fm || x[4] === fm) && (!fc || x[5] === fc); });
+      if (!rows.length) { repMsg('warn', 'لا توجد بيانات لتصديرها بهذه الفترة/التصفية.'); return; }
+      var head = ['Date', 'Time', 'Code', 'Name', 'Module', 'Class', 'User', 'Source'];
+      var name = 'attendance_sem' + r.semester + '_' + (r.mode === 'all' ? 'all' : (r.from + (r.to && r.to !== r.from ? '_to_' + r.to : ''))) + (fm ? '_' + fm : '') + (fc ? '_' + fc : '') + '.csv';
+      downloadCsv(name.replace(/[^\w.\-]+/g, '_'), [head].concat(rows));
+      repMsg('ok', 'تم تنزيل الملف (' + rows.length + ' صف)' + (r.truncated ? ' — تم الاقتصار على أول 30000 صف.' : '') + '.');
+    }).catch(function (e) { b.disabled = false; b.textContent = '⬇ تصدير التقرير (Excel)'; repMsg('err', errText(e)); });
+  }
+
+  $('reportChip').addEventListener('click', openReport);
+  $('repBack').addEventListener('click', closeReport);
+  $('repMode').addEventListener('change', syncRepMode);
+  $('repGo').addEventListener('click', loadReport);
+  $('repRefresh').addEventListener('click', loadReport);
+  $('fMod').addEventListener('change', function () { setOptions($('fCls'), classNames($('fMod').value), 'كل الفصول'); renderReport(); });
+  $('fCls').addEventListener('change', renderReport);
+  $('repNames').addEventListener('click', function () { REPNAMES = !REPNAMES; renderReport(); });
+  $('repExport').addEventListener('click', exportReport);
+
   /* ================= Admin ================= */
   function adminMsg(type, text) { var m = $('adminMsg'); m.className = 'msg ' + type; m.textContent = text; show(m, !!text); }
   function mk(tag, attrs) { var e = document.createElement(tag); for (var k in (attrs || {})) e[k] = attrs[k]; return e; }
@@ -724,7 +1031,7 @@
 
   function openAdmin() {
     stopScan();
-    show($('mainView'), false); show($('adminView'), true);
+    show($('mainView'), false); show($('reportView'), false); show($('adminView'), true);
     adminMsg('warn', 'جاري تحميل الإعدادات...');
     api('adminGet').then(function (r) {
       if (!r || !r.ok) { adminMsg('err', r ? r.message : 'خطأ'); return; }
