@@ -129,6 +129,7 @@
           <h3 id="pvName"></h3>
           <span class="code" id="pvCode"></span><br>
           <span class="badge pending" id="pvBadge"></span>
+          <div class="hint hidden" id="imgWhy" style="padding:4px 0 0"></div>
         </div>
       </div>
       <div class="grid">
@@ -146,7 +147,7 @@
     </section>
 
     <div id="status" class="msg hidden"></div>
-  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 3.2</div>
+  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 3.3</div>
 
     <section class="card hidden" id="logCard">
       <h2>آخر التسجيلات</h2>
@@ -176,6 +177,13 @@
     <div id="userRows"></div>
     <button class="btn alt" id="addUser">+ إضافة مستخدم</button>
     <div class="hint">لحذف صف: امسح بياناته كلها ثم احفظ. يجب أن يبقى أدمن واحد نشط على الأقل. PIN اختياري.</div>
+  </section>
+
+  <section class="card">
+    <h2>🖼 فحص صور الطلاب</h2>
+    <input type="text" id="imgTestCode" class="ltr" placeholder="MK23054471" autocomplete="off" autocapitalize="characters">
+    <button class="btn alt" id="imgTestBtn" style="margin-top:8px">تتبع صورة هذا الطالب</button>
+    <div id="imgTestOut" class="msg hidden" style="white-space:pre-wrap;direction:rtl;font-size:13px"></div>
   </section>
 
   <section class="card">
@@ -495,6 +503,7 @@
     $('pvSem').textContent = D.semester; $('pvMod').textContent = s[3]; $('pvCls').textContent = s[4];
     var a = $('avatar'); a.innerHTML = '';
     a.textContent = (s[1] || '?').charAt(0);
+    show($('imgWhy'), false);
     loadAvatar(s);
     show($('confirmBox'), mode === 'confirm');
     if (mode === 'confirm') { $('notes').value = ''; $('saveBtn').disabled = false; setBadge('pending', 'بانتظار التأكيد'); }
@@ -517,27 +526,40 @@
       try { st = { o: [code], m: {} }; st.m[code] = { r: ref, d: data }; localStorage.setItem(LS_IMG, JSON.stringify(st)); } catch (e2) {}
     }
   }
-  function paintAvatar(code, src) {
+  function paintAvatar(code, src, onFail) {
     if (S.cardCode !== code) return;
     var img = new Image(); img.referrerPolicy = 'no-referrer'; img.style.cssText = 'width:100%;height:100%;object-fit:cover';
-    img.onload = function () { if (S.cardCode === code) { var a = $('avatar'); a.innerHTML = ''; a.appendChild(img); } };
+    img.onload = function () { if (S.cardCode === code) { var a = $('avatar'); a.innerHTML = ''; a.appendChild(img); show($('imgWhy'), false); } };
+    img.onerror = function () { if (onFail) onFail(); };
     img.src = src;
+  }
+  var WHY = {
+    no_ref: 'لا يوجد اسم صورة لهذا الطالب في العمود K',
+    no_student: 'الطالب غير موجود في Codes',
+    not_found: 'لم يتم العثور على ملف الصورة داخل مجلد Drive (تأكد من الاسم)',
+    BAD_ACTION: 'الخادم قديم: الصق Code.gs الجديد ثم Deploy ← New version'
+  };
+  function whyImg(code, text) {
+    if (S.cardCode !== code) return;
+    var w = $('imgWhy'); w.textContent = '🖼 ' + text; show(w, true);
   }
   function loadAvatar(s) {
     var code = s[0], ref = s[5];
-    if (!ref || IMG_NONE[code]) return;
+    if (!ref) { whyImg(code, WHY.no_ref); return; }
     var hit = imgGet(code, ref);
     if (hit) { paintAvatar(code, hit); return; }
+    if (IMG_NONE[code]) { whyImg(code, IMG_NONE[code]); return; }
     if (IMG_PENDING[code]) return;
     IMG_PENDING[code] = true;
     api('image', { code: code }).then(function (r) {
       delete IMG_PENDING[code];
-      if (!r || !r.ok) return;
+      if (!r) { whyImg(code, 'رد غير صالح من الخادم'); return; }
+      if (!r.ok) { var m = WHY[r.code] || r.message || 'خطأ'; IMG_NONE[code] = m; whyImg(code, m); return; }
       var src = r.data || r.url || '';
-      if (!src) { IMG_NONE[code] = true; return; }
+      if (!src) { var m2 = WHY[r.why] || ('لا توجد صورة (' + (r.why || '?') + ')'); IMG_NONE[code] = m2; whyImg(code, m2); return; }
       if (r.data) imgPut(code, ref, r.data);
-      paintAvatar(code, src);
-    }).catch(function () { delete IMG_PENDING[code]; });
+      paintAvatar(code, src, function () { whyImg(code, 'تعذر عرض الصورة في المتصفح (الملف غير مشارك للعرض). أعد المحاولة أو راجع فحص الصور'); });
+    }).catch(function () { delete IMG_PENDING[code]; whyImg(code, 'تعذر الاتصال بالخادم لتحميل الصورة'); });
   }
 
   function setBadge(type, text) { var b = $('pvBadge'); b.className = 'badge ' + type; b.textContent = text; }
@@ -701,6 +723,18 @@
       adminMsg('ok', r.message + ' يتم تطبيقها فورًا.'); window.scrollTo(0, 0);
       // لو الأدمن غيّر بريده/PIN الخاص به لا نحتاج شيئًا، الباقي يتحدث عند الرجوع
     }).catch(function (e) { b.disabled = false; b.textContent = '💾 حفظ كل التعديلات'; adminMsg('err', errText(e)); });
+  });
+
+  $('imgTestBtn').addEventListener('click', function () {
+    var out = $('imgTestOut');
+    var code = $('imgTestCode').value.trim().toUpperCase();
+    out.className = 'msg warn'; out.textContent = 'جاري الفحص...'; show(out, true);
+    api('adminImageTest', { code: code }).then(function (r) {
+      if (!r || !r.ok) { out.className = 'msg err'; out.textContent = r ? (r.code === 'BAD_ACTION' ? WHY.BAD_ACTION : r.message) : 'خطأ'; return; }
+      var bad = r.steps.some(function (s) { return !s.ok; });
+      out.className = 'msg ' + (bad ? 'err' : 'ok');
+      out.textContent = r.steps.map(function (s) { return (s.ok ? '✔ ' : '✖ ') + s.t; }).join('\n');
+    }).catch(function (e) { out.className = 'msg err'; out.textContent = errText(e); });
   });
 
   $('adminRefresh').addEventListener('click', function () {
