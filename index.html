@@ -55,8 +55,10 @@
   .msg.warn{background:#fff3d6;color:var(--warn)}
   .msg.ok{background:#e3f4ea;color:var(--ok)}
   .hidden{display:none!important}
-  .log div{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px dashed #e8dede;font-size:13px}
+  .log{max-height:420px;overflow:auto;border-radius:10px}
+  .log div{display:flex;justify-content:space-between;gap:8px;padding:8px 2px;border-bottom:1px dashed #e8dede;font-size:13px}
   .log div:last-child{border-bottom:0}
+  .log .t{color:#7b6e70;direction:ltr;white-space:nowrap}
   .block{position:fixed;inset:0;background:var(--bg);z-index:9;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
   .block .box{background:#fff;border-radius:18px;padding:26px;max-width:380px;box-shadow:0 4px 18px rgba(90,22,32,.15)}
   .block h2{color:var(--maroon);margin:0 0 10px}
@@ -147,12 +149,12 @@
     </section>
 
     <div id="status" class="msg hidden"></div>
-  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 3.3</div>
 
     <section class="card hidden" id="logCard">
-      <h2>آخر التسجيلات</h2>
+      <h2>سجلات اليوم من حسابك (<b id="mineCount">0</b>)</h2>
       <div class="log" id="log"></div>
     </section>
+    <div class="hint" style="text-align:center;margin-top:14px">الإصدار 3.4</div>
   </div>
 </main>
 
@@ -198,12 +200,13 @@
   var API_URL = (window.API_URL || '').trim();
   var $ = function (id) { return document.getElementById(id); };
   var CODE_RE = /^MK\d{8}$/;
-  var LS_DATA = 'att_data_v3', LS_Q = 'att_queue_v3';
+  var LS_DATA = 'att_data_v3', LS_Q = 'att_queue_v3', LS_MINE = 'att_mine_v3';
 
   var AUTH = { email: '', pin: '' };
   var D = { version: '', semester: '', title: '', students: [], map: {}, search: [] };
-  var ATT = {};                 // أكواد حضرت اليوم
-  var S = { current: null, scanning: false, paused: false, busy: false, sending: false, lastBad: 0, last: { code: '', t: 0 }, isAdmin: false, cardCode: '' };
+  var ATT = {};                 // أكواد حضرت اليوم (من كل المستخدمين)
+  var MINE = [];                // [[code, name, time]] ما سجّله هذا المستخدم اليوم
+  var S = { current: null, scanning: false, paused: false, busy: false, sending: false, lastBad: 0, last: { code: '', t: 0 }, isAdmin: false, roleKnown: false, cardCode: '' };
   var ITEMS = [];               // عناصر الحفظ (pending / sending / ok / dup / err)
   var qr = null, retryTimer = null;
 
@@ -236,11 +239,6 @@
   }
   function clearStatus() { show($('status'), false); }
   function blockScreen(t, m) { $('blockTitle').textContent = t; $('blockMsg').textContent = m || ''; show($('block'), true); }
-  function imgUrl(ref) {
-    if (!ref) return '';
-    if (/^[-\w]{20,}$/.test(ref)) return 'https://drive.google.com/thumbnail?id=' + ref + '&sz=w300';
-    return /^https?:\/\//i.test(ref) ? ref : '';
-  }
   var AUTH_CODES = ['NOT_AUTHORIZED', 'BAD_EMAIL', 'PIN_REQUIRED', 'BAD_PIN'];
 
   /* ---------- local data cache ---------- */
@@ -259,6 +257,26 @@
       D.search.push(norm(s[0] + ' ' + s[1]));
     }
   }
+
+  /* ---------- سجلات اليوم للمستخدم (MINE) ---------- */
+  function dayKey() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function saveMine() { try { localStorage.setItem(LS_MINE, JSON.stringify({ email: AUTH.email, day: dayKey(), mine: MINE })); } catch (e) {} }
+  function loadMine() {
+    try {
+      var c = JSON.parse(localStorage.getItem(LS_MINE) || 'null');
+      if (c && c.email === AUTH.email && c.day === dayKey() && c.mine) MINE = c.mine;
+    } catch (e) {}
+  }
+  function addMine(code, name, time) {
+    var t = (time && time !== 'تم') ? time : '';
+    for (var i = 0; i < MINE.length; i++) {
+      if (MINE[i][0] === code) { if (t && !MINE[i][2]) MINE[i][2] = t; saveMine(); return; }
+    }
+    MINE.push([code, name || code, t]);
+    saveMine();
+  }
+
+  /* ---------- الطابور المحفوظ ---------- */
   function newRid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
   function persistQueue() {
     try {
@@ -303,6 +321,7 @@
 
   function start() {
     show($('login'), false);
+    MINE = []; loadMine(); renderLog();
     var cached = loadData();
     if (cached) {
       D.version = cached.version; D.semester = cached.semester; D.title = cached.title; D.students = cached.students;
@@ -340,10 +359,11 @@
       if (r.students) { D.students = r.students; D.version = r.version; indexData(); }
       saveData();
       ATT = {}; (r.attended || []).forEach(function (c) { ATT[c] = true; });
+      if (r.mine) { MINE = r.mine; saveMine(); }
       setCount(r.todayCount);
       renderHeader(); show($('block'), false);
       if (!S.roleKnown) setStatus('warn', 'الخادم ما زال بنسخة قديمة (Code.gs). الصق الكود الجديد ثم Deploy ← Manage deployments ← Edit ← New version.');
-      updateQueueChip(); processQueue();
+      renderLog(); updateQueueChip(); processQueue();
     }).catch(function (e) {
       if (!hasLocal) blockScreen('تعذر الاتصال', errText(e));
       else {
@@ -363,7 +383,7 @@
   $('logoutChip').addEventListener('click', function () {
     var pend = ITEMS.filter(function (i) { return i.state === 'pending' || i.state === 'sending'; }).length;
     if (pend && !confirm('يوجد ' + pend + ' تسجيل لم يُرفع بعد. هل تريد تغيير الحساب؟ (سيتم رفعها عند الدخول مرة أخرى)')) return;
-    stopScan(); clearAuth(); clearData(); resetCard(); showLogin('');
+    stopScan(); clearAuth(); clearData(); MINE = []; renderLog(); resetCard(); showLogin('');
   });
   $('autoSave').checked = (function () { try { return localStorage.getItem('autoSave') !== '0'; } catch (e) { return true; } })();
   $('autoSave').addEventListener('change', function () { try { localStorage.setItem('autoSave', this.checked ? '1' : '0'); } catch (e) {} });
@@ -512,6 +532,7 @@
     show($('studentCard'), true);
     if (mode === 'confirm') $('studentCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
   /* ---------- student photos (Drive) : تحميل مرة واحدة ثم كاش على الجهاز ---------- */
   var LS_IMG = 'att_img_v3', IMG_MAX = 200, IMG_PENDING = {}, IMG_NONE = {};
   function imgStore() { try { return JSON.parse(localStorage.getItem(LS_IMG) || '{"o":[],"m":{}}'); } catch (e) { return { o: [], m: {} }; } }
@@ -615,6 +636,7 @@
           else if (res.err === 'DUPLICATE') { it.state = 'dup'; ATT[it.code] = true; }
           else { it.state = 'err'; it.msg = res.message; }
         });
+        batch.forEach(function (it) { if (it.state === 'ok') addMine(it.code, it.name, it.time); });
         if (typeof r.todayCount === 'number') setCount(r.todayCount);
       }
       persistQueue(); renderLog(); updateQueueChip(); refreshCardBadge();
@@ -634,7 +656,7 @@
     for (var i = ITEMS.length - 1; i >= 0; i--) {
       var it = ITEMS[i];
       if (it.code !== S.cardCode) continue;
-      if (it.state === 'ok') setBadge('ok', '✔ تم تسجيل الحضور ' + (it.time || ''));
+      if (it.state === 'ok') setBadge('ok', '✔ تم تسجيل الحضور ' + (it.time && it.time !== 'تم' ? it.time : ''));
       else if (it.state === 'dup') setBadge('err', 'تم تسجيل حضوره مسبقًا اليوم');
       else if (it.state === 'err') setBadge('err', '✖ ' + (it.msg || 'فشل التسجيل'));
       else setBadge('pending', '⏳ جاري الحفظ...');
@@ -642,18 +664,28 @@
     }
   }
 
+  /** القائمة الكاملة: المنتظرون ⏳ ثم الأخطاء/المكرر في هذه الجلسة ثم كل ما سجّله المستخدم اليوم (الأحدث أولًا). */
   function renderLog() {
     var l = $('log'); l.innerHTML = '';
-    var list = ITEMS.slice(-8).reverse();
-    list.forEach(function (it) {
-      var ic = it.state === 'ok' ? '✔' : (it.state === 'dup' ? '↺' : (it.state === 'err' ? '✖' : '⏳'));
-      var color = it.state === 'ok' ? '#1e7b46' : (it.state === 'err' || it.state === 'dup' ? '#b3261e' : '#a56a00');
-      var extra = it.state === 'ok' ? (it.time || '') : (it.state === 'dup' ? 'مسجل سابقًا' : (it.state === 'err' ? (it.msg || '') : 'جاري الحفظ'));
-      var d = document.createElement('div');
-      d.innerHTML = '<span><b style="color:' + color + '">' + ic + '</b> ' + esc(it.name || it.code) + '</span><span style="color:#7b6e70">' + esc(extra) + '</span>';
-      l.appendChild(d);
+    var rows = [];
+    for (var i = ITEMS.length - 1; i >= 0; i--) {
+      var it = ITEMS[i];
+      if (it.state === 'pending' || it.state === 'sending') rows.push(['⏳', '#a56a00', it.name || it.code, 'جاري الحفظ']);
+    }
+    var bad = ITEMS.filter(function (x) { return x.state === 'err' || x.state === 'dup'; }).slice(-5).reverse();
+    bad.forEach(function (it) {
+      rows.push(['✖', '#b3261e', it.name || it.code, it.state === 'dup' ? 'مسجل سابقًا' : (it.msg || 'فشل')]);
     });
-    show($('logCard'), list.length > 0);
+    for (var j = MINE.length - 1; j >= 0; j--) rows.push(['✔', '#1e7b46', MINE[j][1], MINE[j][2] || '']);
+    var frag = document.createDocumentFragment();
+    rows.forEach(function (r) {
+      var d = document.createElement('div');
+      d.innerHTML = '<span><b style="color:' + r[1] + '">' + r[0] + '</b> ' + esc(r[2]) + '</span><span class="t">' + esc(r[3]) + '</span>';
+      frag.appendChild(d);
+    });
+    l.appendChild(frag);
+    $('mineCount').textContent = MINE.length;
+    show($('logCard'), rows.length > 0);
   }
 
   /* ================= Admin ================= */
@@ -721,7 +753,6 @@
       b.disabled = false; b.textContent = '💾 حفظ كل التعديلات';
       if (!r || !r.ok) { adminMsg('err', r ? r.message : 'خطأ'); window.scrollTo(0, 0); return; }
       adminMsg('ok', r.message + ' يتم تطبيقها فورًا.'); window.scrollTo(0, 0);
-      // لو الأدمن غيّر بريده/PIN الخاص به لا نحتاج شيئًا، الباقي يتحدث عند الرجوع
     }).catch(function (e) { b.disabled = false; b.textContent = '💾 حفظ كل التعديلات'; adminMsg('err', errText(e)); });
   });
 
@@ -746,7 +777,7 @@
 
   /* ---------- boot ---------- */
   loadSaved();
-  loadQueue(); updateQueueChip(); renderLog();      // الطابور المحفوظ يُحمَّل فورًا قبل أي مسح جديد
+  loadQueue(); loadMine(); updateQueueChip(); renderLog();      // الطابور وسجلات اليوم المحفوظة تُحمَّل فورًا قبل أي مسح جديد
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) { navigator.serviceWorker.register('sw.js').catch(function () {}); }
   if (!API_URL || API_URL.indexOf('PASTE_') === 0) {
     blockScreen('الإعداد غير مكتمل', 'ضع رابط الـ Web App (/exec) داخل ملف config.js بجانب index.html.');
