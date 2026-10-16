@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+<base target="_top">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>مدرسة هوس ايروف للشمامسة - تسجيل الحضور</title>
 <style>
   :root{
     --maroon:#7a1f2b; --maroon-d:#5a1620; --gold:#c9a24b; --gold-l:#f6edd6;
@@ -16,93 +15,55 @@
   header p{margin:4px 0 0;font-size:13px;opacity:.9}
   .chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
   .chip{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);padding:4px 12px;border-radius:99px;font-size:12px}
-  .chip.btnchip{cursor:pointer;background:rgba(201,162,75,.35)}
   main{max-width:560px;margin:-14px auto 0;padding:0 12px}
   .card{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(90,22,32,.08);padding:14px;margin-top:12px}
   .card h2{margin:0 0 10px;font-size:15px;color:var(--maroon)}
+  .head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+  .head h2{margin:0}
   button{font-family:inherit;font-size:15px;border:0;border-radius:12px;padding:12px 14px;cursor:pointer}
   .btn{background:var(--maroon);color:#fff;width:100%;font-weight:600}
   .btn:disabled{opacity:.5}
   .btn.alt{background:var(--gold-l);color:var(--maroon);border:1px solid var(--gold)}
   .btn.ghost{background:#f1ecec;color:var(--ink)}
+  .btn.sm{width:auto;padding:8px 14px;font-size:13px}
   .row{display:flex;gap:8px}
   .row>*{flex:1}
-  #readerWrap{position:relative;display:none;width:100%;border-radius:12px;overflow:hidden;margin-bottom:10px;background:#000}
-  #reader{width:100%}
+  #reader{width:100%;border-radius:12px;overflow:hidden;margin-bottom:10px;display:none;background:#000}
   #reader video{width:100%!important}
-  .scanmark{position:absolute;left:50%;top:50%;width:104px;height:104px;margin:-52px 0 0 -52px;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;z-index:5;box-shadow:0 6px 22px rgba(0,0,0,.45)}
-  .scanmark.ok{background:rgba(30,123,70,.96)}
-  .scanmark.err{background:rgba(179,38,30,.96)}
-  .scanmark svg{width:62px;height:62px}
-  .scanmark.show{animation:pop 1.1s ease forwards}
-  @keyframes pop{0%{opacity:0;transform:scale(.4)}15%{opacity:1;transform:scale(1.12)}30%{transform:scale(1)}78%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
-  input[type=text],input[type=date],textarea,select{width:100%;font-family:inherit;font-size:16px;padding:11px;border:1px solid #d9cfcf;border-radius:12px;background:#fff;color:var(--ink)}
+  input[type=text],textarea{width:100%;font-family:inherit;font-size:16px;padding:12px;border:1px solid #d9cfcf;border-radius:12px;background:#fff;color:var(--ink)}
   textarea{resize:none;height:64px}
-  input:focus,textarea:focus,select:focus{outline:2px solid var(--gold);border-color:var(--gold)}
+  input:focus,textarea:focus{outline:2px solid var(--gold);border-color:var(--gold)}
   #results{margin-top:8px;max-height:260px;overflow:auto;border-radius:12px}
   .item{padding:11px 12px;border-bottom:1px solid #f0e8e8;cursor:pointer;font-size:14px}
   .item:active{background:var(--gold-l)}
-  .item.off{opacity:.55}
   .item b{color:var(--maroon);direction:ltr;unicode-bidi:isolate}
   .hint{color:var(--muted);font-size:12px;padding:8px 2px}
   .person{display:flex;gap:12px;align-items:center}
-  .avatar{width:84px;height:104px;border-radius:12px;background:var(--gold-l);border:2px solid var(--gold);flex:none;display:flex;align-items:center;justify-content:center;font-size:30px;color:var(--maroon);font-weight:700;overflow:hidden}
+  .avatar{width:84px;height:104px;border-radius:12px;background:var(--gold-l);border:2px solid var(--gold);object-fit:cover;flex:none;display:flex;align-items:center;justify-content:center;font-size:30px;color:var(--maroon);font-weight:700;overflow:hidden}
   .person h3{margin:0 0 4px;font-size:17px;line-height:1.4}
   .code{direction:ltr;unicode-bidi:isolate;display:inline-block;background:var(--gold-l);color:var(--maroon);padding:2px 10px;border-radius:8px;font-weight:700;font-size:13px}
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
   .cell{background:#faf6f0;border-radius:10px;padding:8px;text-align:center}
   .cell small{display:block;color:var(--muted);font-size:11px;margin-bottom:2px}
   .cell span{font-weight:700;font-size:14px;word-break:break-word}
-  .badge{display:inline-block;margin-top:6px;padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600}
-  .badge.pending{background:#fff3d6;color:var(--warn)}
-  .badge.ok{background:#e3f4ea;color:var(--ok)}
-  .badge.err{background:#fde8e7;color:var(--err)}
   .msg{padding:12px;border-radius:12px;font-size:14px;margin-top:10px;line-height:1.7}
   .msg.err{background:#fde8e7;color:var(--err)}
   .msg.warn{background:#fff3d6;color:var(--warn)}
   .msg.ok{background:#e3f4ea;color:var(--ok)}
+  .msg .li{font-size:13px;margin-top:4px}
   .hidden{display:none!important}
-  .log{max-height:420px;overflow:auto;border-radius:10px}
-  .log div{display:flex;justify-content:space-between;gap:8px;padding:8px 2px;border-bottom:1px dashed #e8dede;font-size:13px}
-  .log div:last-child{border-bottom:0}
-  .log .t{color:#7b6e70;direction:ltr;white-space:nowrap}
+  .log{max-height:380px;overflow:auto}
+  .lr{padding:8px 0;border-bottom:1px dashed #e8dede;font-size:13px}
+  .lr:last-child{border-bottom:0}
+  .lr .t{display:flex;justify-content:space-between;gap:8px;font-weight:600}
+  .lr .t .tm{color:var(--muted);font-weight:400;direction:ltr;white-space:nowrap}
+  .lr .s{color:var(--muted);font-size:12px;margin-top:2px}
   .block{position:fixed;inset:0;background:var(--bg);z-index:9;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
   .block .box{background:#fff;border-radius:18px;padding:26px;max-width:380px;box-shadow:0 4px 18px rgba(90,22,32,.15)}
   .block h2{color:var(--maroon);margin:0 0 10px}
   .toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:10px}
   .spin{display:inline-block;width:16px;height:16px;border:3px solid #fff5;border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite;vertical-align:middle;margin-inline-start:6px}
   @keyframes s{to{transform:rotate(360deg)}}
-  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;max-width:92%;z-index:20;padding:11px 16px;border-radius:14px;font-size:13px;line-height:1.7;color:#fff;background:#3b2c2f;box-shadow:0 6px 22px rgba(0,0,0,.3);text-align:center}
-  .toast.ok{background:var(--ok)}
-  .toast.err{background:var(--err)}
-  /* admin */
-  .arow{background:#faf6f0;border-radius:12px;padding:10px;margin-bottom:8px;display:grid;gap:6px}
-  .arow label{font-size:11px;color:var(--muted);display:block;margin-bottom:2px}
-  .arow .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .arow .chk{display:flex;align-items:center;gap:6px;font-size:14px;padding-top:18px}
-  .ltr{direction:ltr;text-align:left}
-  /* report */
-  .sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .sum .cell b{display:block;font-size:22px;color:var(--maroon)}
-  .mod{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(90,22,32,.08);padding:12px 14px;margin-top:12px}
-  .mod .mh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:700;color:var(--maroon);font-size:15px}
-  .mod .num{direction:ltr;unicode-bidi:isolate;white-space:nowrap}
-  .meter{height:8px;background:#f0e8e8;border-radius:99px;overflow:hidden;margin:6px 0 8px}
-  .meter i{display:block;height:100%;background:var(--ok);border-radius:99px}
-  .cls{display:flex;justify-content:space-between;gap:8px;padding:7px 2px;border-top:1px dashed #e8dede;font-size:13px}
-  .cls .num{direction:ltr;unicode-bidi:isolate;white-space:nowrap;font-weight:700}
-  .cls small{color:var(--muted);font-weight:400}
-  .clsw{border-top:1px dashed #e8dede}
-  .clsw .cls{border-top:0;cursor:pointer;padding:9px 2px}
-  .clsw .cls:active{background:var(--gold-l)}
-  .clsw .arrow{display:inline-block;width:16px;color:var(--maroon)}
-  .names{background:#faf6f0;border-radius:10px;padding:4px 10px;margin:0 0 8px}
-  .names .nm{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed #eadfdf;font-size:13px}
-  .names .nm:last-child{border-bottom:0}
-  .names .nm small{color:var(--muted);direction:ltr;unicode-bidi:isolate;margin:0 8px}
-  .names .nm .t{color:var(--muted);white-space:nowrap}
-  .dayrow{cursor:pointer}
-  .dayrow:active{background:var(--gold-l)}
 </style>
 </head>
 <body>
@@ -113,14 +74,12 @@
   <div class="box" style="width:100%">
     <h2>تسجيل الدخول</h2>
     <p style="margin:0 0 12px;font-size:14px">اكتب بريد Gmail المسجل لدى المدرسة (مرة واحدة فقط)</p>
-    <input type="text" id="emailInput" class="ltr" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="example@gmail.com">
-    <input type="text" id="pinInput" class="ltr hidden" inputmode="numeric" autocomplete="off" placeholder="الرقم السري" style="margin-top:8px">
+    <input type="text" id="emailInput" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="example@gmail.com" style="direction:ltr;text-align:left">
+    <input type="text" id="pinInput" class="hidden" inputmode="numeric" autocomplete="off" placeholder="الرقم السري" style="margin-top:8px;direction:ltr;text-align:left">
     <div id="loginErr" class="msg err hidden"></div>
     <button class="btn" id="loginBtn" style="margin-top:12px">دخول</button>
   </div>
 </div>
-
-<div id="toast" class="toast hidden"></div>
 
 <header>
   <h1 id="title">مدرسة هوس ايروف للشمامسة</h1>
@@ -128,224 +87,84 @@
   <div class="chips">
     <span class="chip">الفصل الدراسي: <b id="semChip">-</b></span>
     <span class="chip">حضور اليوم: <b id="countChip">0</b></span>
-    <span class="chip hidden" id="queueChip">⏳ <b id="queueNum">0</b> بانتظار الرفع</span>
-    <span class="chip ltr" id="userChip">-</span>
-    <span class="chip btnchip" id="refreshChip" style="background:#c9a24b;font-weight:700">🔄 تحديث</span>
-    <span class="chip btnchip" id="reportChip" style="background:#c9a24b;font-weight:700">📊 التقرير</span>
-    <span class="chip btnchip hidden" id="adminChip" style="background:#c9a24b;font-weight:700">⚙ الإعدادات</span>
-    <span class="chip btnchip" id="logoutChip" style="background:rgba(255,255,255,.14)">تغيير الحساب ⎋</span>
+    <span class="chip" id="userChip" style="direction:ltr">-</span>
+    <span class="chip" id="logoutChip" style="cursor:pointer">تغيير الحساب ⎋</span>
   </div>
 </header>
 
-<!-- ================= صفحة الحضور ================= -->
-<main id="mainView">
-  <div id="closedCard" class="card hidden"><h2>⛔ التسجيل متوقف</h2><div id="closedMsg" class="msg warn"></div></div>
-
-  <div id="scanWrap">
-    <section class="card">
-      <h2>📷 مسح QR</h2>
-      <div id="readerWrap">
-        <div id="reader"></div>
-        <div id="scanMark" class="scanmark"></div>
-      </div>
-      <div class="row">
-        <button class="btn" id="camBtn">فتح الكاميرا</button>
-        <button class="btn alt" id="photoBtn">مسح من صورة</button>
-      </div>
-      <input type="file" id="photoInput" accept="image/*" capture="environment" class="hidden">
-      <label class="toggle"><input type="checkbox" id="autoSave" checked> تسجيل فوري بعد المسح (الكاميرا تظل شغالة للطالب التالي)</label>
-      <div id="camMsg" class="msg err hidden"></div>
-    </section>
-
-    <section class="card">
-      <h2>🔎 بحث يدوي (بالكود أو الاسم)</h2>
-      <input type="text" id="search" placeholder="MK26030537 أو اكتب الاسم" autocomplete="off">
-      <div id="results"></div>
-    </section>
-
-    <section class="card hidden" id="studentCard">
-      <div class="person">
-        <div class="avatar" id="avatar"></div>
-        <div>
-          <h3 id="pvName"></h3>
-          <span class="code" id="pvCode"></span><br>
-          <span class="badge pending" id="pvBadge"></span>
-          <div class="hint hidden" id="imgWhy" style="padding:4px 0 0"></div>
-        </div>
-      </div>
-      <div class="grid">
-        <div class="cell"><small>الفصل الدراسي</small><span id="pvSem"></span></div>
-        <div class="cell"><small>الموديول</small><span id="pvMod"></span></div>
-        <div class="cell"><small>الفصل / Class</small><span id="pvCls"></span></div>
-      </div>
-      <div id="confirmBox" class="hidden">
-        <textarea id="notes" maxlength="300" placeholder="ملاحظات (اختياري)"></textarea>
-        <div class="row" style="margin-top:10px">
-          <button class="btn" id="saveBtn">✔ تأكيد الحضور</button>
-          <button class="btn ghost" id="cancelBtn" style="flex:.5">إلغاء</button>
-        </div>
-      </div>
-    </section>
-
-    <div id="status" class="msg hidden"></div>
-
-    <section class="card hidden" id="logCard">
-      <h2>سجلات اليوم من حسابك (<b id="mineCount">0</b>)</h2>
-      <div class="log" id="log"></div>
-    </section>
-  </div>
-
-  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 3.8 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
-  <div class="hint" id="srvInfo" style="text-align:center;padding-top:0;direction:ltr"></div>
-</main>
-
-<!-- ================= صفحة التقرير ================= -->
-<main id="reportView" class="hidden">
+<main>
+  <!-- Scanner -->
   <section class="card">
-    <div class="row" style="align-items:center">
-      <h2 style="margin:0">📊 تقرير الحضور</h2>
-      <button class="btn ghost" id="repBack" style="flex:.4">رجوع ←</button>
-    </div>
-    <div id="repSub" class="hint"></div>
-  </section>
-
-  <section class="card hidden" id="repFilter">
-    <h2>الفترة (للأدمن)</h2>
-    <select id="repMode">
-      <option value="today">اليوم</option>
-      <option value="day">يوم محدد</option>
-      <option value="range">فترة من - إلى</option>
-      <option value="all">كل الأيام</option>
-    </select>
-    <div class="row hidden" id="repDates" style="margin-top:8px">
-      <div><div class="hint" style="padding:0 0 2px">من</div><input type="date" id="repFrom" class="ltr"></div>
-      <div id="repToWrap"><div class="hint" style="padding:0 0 2px">إلى</div><input type="date" id="repTo" class="ltr"></div>
-    </div>
-    <button class="btn" id="repGo" style="margin-top:10px">عرض التقرير</button>
-  </section>
-
-  <div id="repMsg" class="msg hidden"></div>
-
-  <section class="card hidden" id="repSummary">
-    <div class="sum">
-      <div class="cell"><small id="sumLbl1">حضروا</small><b id="sumAtt">0</b></div>
-      <div class="cell"><small>المسجلون</small><b id="sumEnr">0</b></div>
-      <div class="cell"><small id="sumLbl3">النسبة</small><b id="sumPct">0%</b></div>
-    </div>
-    <div class="hint" id="sumNote" style="padding-bottom:0"></div>
-  </section>
-
-  <section class="card hidden" id="repTools">
-    <h2>تصفية وأسماء الحاضرين</h2>
+    <h2>📷 مسح QR</h2>
+    <div id="reader"></div>
     <div class="row">
-      <div><div class="hint" style="padding:0 0 2px">الموديول</div><select id="fMod"><option value="">كل الموديولات</option></select></div>
-      <div><div class="hint" style="padding:0 0 2px">الفصل</div><select id="fCls"><option value="">كل الفصول</option></select></div>
+      <button class="btn" id="camBtn">فتح الكاميرا</button>
+      <button class="btn alt" id="photoBtn">مسح من صورة</button>
     </div>
-    <div class="row" style="margin-top:8px">
-      <button class="btn alt" id="repNames">👥 إظهار كل الأسماء</button>
-      <button class="btn alt hidden" id="repExport">⬇ تصدير التقرير (Excel)</button>
-    </div>
-    <div class="hint" style="padding-bottom:0">اضغط على أي فصل لعرض أسماء الحاضرين فيه.</div>
+    <input type="file" id="photoInput" accept="image/*" capture="environment" class="hidden">
+    <label class="toggle"><input type="checkbox" id="autoSave"> تسجيل فوري بعد المسح (بدون تأكيد)</label>
+    <div id="camMsg" class="msg err hidden"></div>
   </section>
 
-  <div id="repModules"></div>
-
-  <section class="card hidden" id="repDaysCard">
-    <h2>الحضور حسب اليوم <small style="color:#7b6e70;font-weight:400">(اضغط على يوم لعرضه)</small></h2>
-    <div class="hint hidden" id="repDaysNote" style="padding-top:0">الأعداد هنا إجمالية لكل الموديولات والفصول (بدون تصفية).</div>
-    <div class="log" id="repDays"></div>
-  </section>
-
+  <!-- Manual -->
   <section class="card">
-    <button class="btn alt" id="repRefresh">🔄 تحديث</button>
+    <h2>🔎 بحث يدوي (بالكود أو الاسم)</h2>
+    <input type="text" id="search" placeholder="MK26030537 أو اكتب الاسم" autocomplete="off">
+    <div id="results"></div>
+  </section>
+
+  <!-- Preview -->
+  <section class="card hidden" id="preview">
+    <h2>بيانات الطالب</h2>
+    <div class="person">
+      <div class="avatar" id="avatar"></div>
+      <div>
+        <h3 id="pvName"></h3>
+        <span class="code" id="pvCode"></span>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="cell"><small>الفصل الدراسي</small><span id="pvSem"></span></div>
+      <div class="cell"><small>الموديول</small><span id="pvMod"></span></div>
+      <div class="cell"><small>الفصل / Class</small><span id="pvCls"></span></div>
+    </div>
+    <div id="pvWarn" class="msg warn hidden"></div>
+    <textarea id="notes" maxlength="300" placeholder="ملاحظات (اختياري)"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="saveBtn">✔ تأكيد الحضور</button>
+      <button class="btn ghost" id="cancelBtn" style="flex:.5">إلغاء</button>
+    </div>
+  </section>
+
+  <div id="status" class="msg hidden"></div>
+
+  <!-- Log + refresh -->
+  <section class="card" id="logCard">
+    <div class="head">
+      <h2>📋 سجل الحضور (آخر 300)</h2>
+      <button class="btn alt sm" id="refreshBtn">🔄 تحديث</button>
+    </div>
+    <div class="log" id="log"><div class="hint" id="logHint">اضغط "تحديث" لعرض آخر 300 تسجيل وفحص التكرارات.</div></div>
+    <div id="dupMsg" class="msg ok hidden"></div>
   </section>
 </main>
 
-<!-- ================= صفحة الأدمن ================= -->
-<main id="adminView" class="hidden">
-  <section class="card">
-    <div class="row" style="align-items:center">
-      <h2 style="margin:0">⚙ إعدادات النظام (General Setting)</h2>
-      <button class="btn ghost" id="adminBack" style="flex:.4">رجوع ←</button>
-    </div>
-    <div id="adminMsg" class="msg hidden"></div>
-  </section>
-
-  <section class="card">
-    <h2>الإعدادات العامة</h2>
-    <div id="setRows"></div>
-    <button class="btn alt" id="addSet">+ إضافة إعداد</button>
-  </section>
-
-  <section class="card">
-    <h2>المستخدمون المصرح لهم</h2>
-    <div id="userRows"></div>
-    <button class="btn alt" id="addUser">+ إضافة مستخدم</button>
-    <div class="hint">لحذف صف: امسح بياناته كلها ثم احفظ. يجب أن يبقى أدمن واحد نشط على الأقل. PIN اختياري.</div>
-  </section>
-
-  <section class="card">
-    <h2>🖼 فحص صور الطلاب</h2>
-    <input type="text" id="imgTestCode" class="ltr" placeholder="MK23054471" autocomplete="off" autocapitalize="characters">
-    <button class="btn alt" id="imgTestBtn" style="margin-top:8px">تتبع صورة هذا الطالب</button>
-    <div id="imgTestOut" class="msg hidden" style="white-space:pre-wrap;direction:rtl;font-size:13px"></div>
-  </section>
-
-  <section class="card">
-    <button class="btn" id="adminSave">💾 حفظ كل التعديلات</button>
-    <button class="btn alt" id="adminRefresh" style="margin-top:8px">🔄 تحديث بيانات الطلاب (Codes / A25) الآن</button>
-  </section>
-</main>
-
-<script>
-  // تحميل config.js: بعد "مسح الكاش" يُضاف رقم لضمان جلب أحدث نسخة من الخادم وليس من كاش المتصفح
-  document.write('<script src="config.js' + (/[?&]r=\d+/.test(location.search) ? '?r=' + Date.now() : '') + '"><' + '/script>');
-</script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
-  var API_URL = (window.API_URL || '').trim();
-  var NEED_SERVER = '3.8';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.8 = كتابة مفتاح الحضور في العمود M)
-  function urlTag() { var m = API_URL.match(/\/s\/([^\/]+)\/exec/); var id = m ? m[1] : API_URL; return id.length > 14 ? id.slice(0, 6) + '…' + id.slice(-8) : id; }
-  function verLess(a, b) {
-    var x = String(a || '0').split('.').map(Number), y = String(b || '0').split('.').map(Number);
-    for (var i = 0; i < 3; i++) { var p = x[i] || 0, q = y[i] || 0; if (p < q) return true; if (p > q) return false; }
-    return false;
-  }
-  function srvOld(ver) { return !ver || verLess(ver, NEED_SERVER); }
-  function srvNote() { return ' (رابط الخادم المستخدم في config.js: ' + urlTag() + ')'; }
-  function setSrvInfo(ver) {
-    var e = document.getElementById('srvInfo'); if (!e) return;
-    e.textContent = srvOld(ver) ? ('⚠ Server: ' + (ver || 'OLD') + ' | ' + urlTag()) : ('Server: v' + ver + ' ✔ | ' + urlTag());
-    e.style.color = srvOld(ver) ? '#b3261e' : '#7b6e70';
-  }
-
   var $ = function (id) { return document.getElementById(id); };
   var CODE_RE = /^MK\d{8}$/;
-  var LS_DATA = 'att_data_v3', LS_Q = 'att_queue_v3', LS_MINE = 'att_mine_v3';
-
   var AUTH = { email: '', pin: '' };
-  var D = { version: '', semester: '', title: '', students: [], map: {}, search: [] };
-  var ATT = {};                 // أكواد حضرت اليوم (من كل المستخدمين)
-  var MINE = [];                // [[code, name, time]] ما سجّله هذا المستخدم اليوم من هذه الصفحة (الإيميل + web app)
-  var S = { current: null, scanning: false, paused: false, busy: false, sending: false, lastBad: 0, last: { code: '', t: 0 }, isAdmin: false, roleKnown: false, cardCode: '', refreshing: false };
-  var ITEMS = [];               // عناصر الحفظ (pending / sending / ok / dup / err)
-  var qr = null, retryTimer = null;
+  var S = { students: [], index: [], current: null, scanning: false, busy: false, refreshing: false, lastBad: 0 };
+  var qr = null;
 
-  /* ---------- helpers ---------- */
-  function api(action, extra) {
-    var body = { action: action, auth: AUTH };
-    for (var k in (extra || {})) body[k] = extra[k];
-    var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-    var timer = ctl ? setTimeout(function () { ctl.abort(); }, 40000) : null;
-    return fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(body),
-      signal: ctl ? ctl.signal : undefined
-    }).then(function (r) { if (timer) clearTimeout(timer); return r.json(); })
-      .catch(function () { if (timer) clearTimeout(timer); throw new Error('NETWORK'); });
+  function run(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (res, rej) {
+      var r = google.script.run.withSuccessHandler(res).withFailureHandler(rej);
+      r[fn].apply(r, args);
+    });
   }
-  function errText(e) { return (e && e.message === 'NETWORK') ? 'تعذر الاتصال بالخادم. تأكد من الإنترنت.' : ((e && e.message) ? e.message : String(e)); }
+  function errText(e) { return (e && e.message) ? e.message : String(e); }
   function norm(s) {
     return String(s || '').toLowerCase()
       .replace(/[\u064B-\u0652\u0640]/g, '')
@@ -353,186 +172,67 @@
       .replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim();
   }
   function show(el, on) { el.classList.toggle('hidden', !on); }
-  function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; }
-  function beep(ok) { try { if (navigator.vibrate) navigator.vibrate(ok ? 90 : [70, 50, 70]); } catch (e) {} }
+  function beep(ok) {
+    try { if (navigator.vibrate) navigator.vibrate(ok ? 120 : [80, 60, 80]); } catch (e) {}
+  }
   function setStatus(type, html) {
-    var s = $('status'); s.className = 'msg ' + type; s.innerHTML = html; show(s, true);
+    var s = $('status');
+    s.className = 'msg ' + type;
+    s.innerHTML = html;
+    show(s, true);
+    s.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
   function clearStatus() { show($('status'), false); }
-  function blockScreen(t, m) { $('blockTitle').textContent = t; $('blockMsg').textContent = m || ''; show($('block'), true); }
-  function toast(text, type) {
-    var t = $('toast'); t.className = 'toast ' + (type || ''); t.textContent = text;
-    clearTimeout(S.toastT); S.toastT = setTimeout(function () { show(t, false); }, 4500);
-  }
-  var AUTH_CODES = ['NOT_AUTHORIZED', 'BAD_EMAIL', 'PIN_REQUIRED', 'BAD_PIN'];
-
-  /* ---------- local data cache ---------- */
-  function saveData() {
-    try { localStorage.setItem(LS_DATA, JSON.stringify({ email: AUTH.email, version: D.version, semester: D.semester, title: D.title, students: D.students })); } catch (e) {}
-  }
-  function loadData() {
-    try { var c = JSON.parse(localStorage.getItem(LS_DATA) || 'null'); return (c && c.email === AUTH.email && c.students) ? c : null; } catch (e) { return null; }
-  }
-  function clearData() { try { localStorage.removeItem(LS_DATA); } catch (e) {} }
-  function indexData() {
-    D.map = {}; D.search = [];
-    for (var i = 0; i < D.students.length; i++) {
-      var s = D.students[i];
-      D.map[s[0]] = s;
-      D.search.push(norm(s[0] + ' ' + s[1]));
-    }
-  }
-
-  /* ---------- سجلات اليوم للمستخدم (MINE) ---------- */
-  function dayKey() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
-  function saveMine() { try { localStorage.setItem(LS_MINE, JSON.stringify({ email: AUTH.email, day: dayKey(), mine: MINE })); } catch (e) {} }
-  function loadMine() {
-    try {
-      var c = JSON.parse(localStorage.getItem(LS_MINE) || 'null');
-      if (c && c.email === AUTH.email && c.day === dayKey() && c.mine) MINE = c.mine;
-    } catch (e) {}
-  }
-  function addMine(code, name, time) {
-    var t = (time && time !== 'تم') ? time : '';
-    for (var i = 0; i < MINE.length; i++) {
-      if (MINE[i][0] === code) { if (t && !MINE[i][2]) MINE[i][2] = t; saveMine(); return; }
-    }
-    MINE.push([code, name || code, t]);
-    saveMine();
-  }
-
-  /* ---------- الطابور المحفوظ ---------- */
-  function newRid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
-  function persistQueue() {
-    try {
-      var p = ITEMS.filter(function (i) { return i.state === 'pending' || i.state === 'sending'; })
-        .map(function (i) { return { code: i.code, name: i.name, notes: i.notes, rid: i.rid, maybeSent: !!i.maybeSent }; });
-      localStorage.setItem(LS_Q, JSON.stringify(p));
-    } catch (e) {}
-  }
-  function loadQueue() {
-    try {
-      var p = JSON.parse(localStorage.getItem(LS_Q) || '[]');
-      p.forEach(function (x) { ITEMS.push({ code: x.code, name: x.name, notes: x.notes || '', rid: x.rid || newRid(), maybeSent: !!x.maybeSent, state: 'pending' }); });
-    } catch (e) {}
-  }
+  function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; }
 
   /* ---------- login / init ---------- */
   function loadSaved() {
-    try { AUTH.email = localStorage.getItem('att_email') || ''; AUTH.pin = localStorage.getItem('att_pin') || ''; } catch (e) {}
+    try {
+      AUTH.email = localStorage.getItem('att_email') || '';
+      AUTH.pin = localStorage.getItem('att_pin') || '';
+    } catch (e) {}
   }
-  function saveAuth() { try { localStorage.setItem('att_email', AUTH.email); localStorage.setItem('att_pin', AUTH.pin); } catch (e) {} }
+  function saveAuth() {
+    try { localStorage.setItem('att_email', AUTH.email); localStorage.setItem('att_pin', AUTH.pin); } catch (e) {}
+  }
   function clearAuth() {
     AUTH = { email: '', pin: '' };
     try { localStorage.removeItem('att_email'); localStorage.removeItem('att_pin'); } catch (e) {}
   }
   function showLogin(msg, needPin) {
-    show($('block'), false); show($('login'), true);
+    show($('block'), false);
+    show($('login'), true);
     $('emailInput').value = AUTH.email;
     show($('pinInput'), !!needPin || !!AUTH.pin);
-    var e = $('loginErr'); e.textContent = msg || ''; show(e, !!msg);
+    var e = $('loginErr');
+    e.textContent = msg || '';
+    show(e, !!msg);
   }
-  function renderHeader() {
-    $('title').textContent = D.title || 'مدرسة هوس ايروف للشمامسة';
-    $('semChip').textContent = D.semester || '-';
-    $('userChip').textContent = AUTH.email + (S.roleKnown ? (S.isAdmin ? ' · أدمن' : ' · مستخدم') : '');
-    show($('adminChip'), S.isAdmin);
-  }
-  function setCount(n) { $('countChip').textContent = n; }
-  function updateQueueChip() {
-    var n = ITEMS.filter(function (i) { return i.state === 'pending' || i.state === 'sending'; }).length;
-    $('queueNum').textContent = n; show($('queueChip'), n > 0);
-  }
-
   function start() {
     show($('login'), false);
-    MINE = []; loadMine(); renderLog();
-    var cached = loadData();
-    if (cached) {
-      D.version = cached.version; D.semester = cached.semester; D.title = cached.title; D.students = cached.students;
-      indexData(); renderHeader(); show($('block'), false);
-    } else {
-      blockScreen('جاري التحميل...', 'يتم التحقق من الحساب وتحميل بيانات الطلاب');
-    }
-    return refreshInit(cached ? cached.version : '', !!cached);
-  }
-
-  /** تحميل/تحديث بيانات الطلاب. hasLocal=true يعني التطبيق شغال أصلًا من الكاش. */
-  function refreshInit(version, hasLocal) {
-    return api('init', { version: version }).then(function (r) {
+    blockScreen('جاري التحميل...', 'يتم التحقق من الحساب والبيانات');
+    run('getInit', AUTH).then(function (r) {
       if (!r || !r.ok) {
-        if (r && AUTH_CODES.indexOf(r.code) > -1) {
-          if (r.code !== 'PIN_REQUIRED' && r.code !== 'BAD_PIN') AUTH.pin = '';
-          clearData(); showLogin(r.message, r.code === 'PIN_REQUIRED' || r.code === 'BAD_PIN');
-        } else if (!hasLocal) {
-          blockScreen('تعذر الدخول', r && r.message);
+        var needPin = r && (r.code === 'PIN_REQUIRED' || r.code === 'BAD_PIN');
+        if (r && (r.code === 'NOT_AUTHORIZED' || r.code === 'BAD_EMAIL' || needPin)) {
+          if (!needPin) { AUTH.pin = ''; }
+          showLogin(r.message, needPin);
         } else {
-          setStatus('warn', esc(r ? r.message : 'خطأ'));
+          blockScreen('تعذر الدخول', r && r.message);
         }
         return;
       }
       saveAuth();
-      S.isAdmin = !!r.isAdmin;
-      S.roleKnown = (r.isAdmin !== undefined);
-      setSrvInfo(r.ver);
-      D.title = r.title; D.semester = r.semester;
-      if (r.closed) {
-        $('closedMsg').textContent = r.message;
-        show($('closedCard'), true); show($('scanWrap'), false);
-        renderHeader(); show($('block'), false); return;
-      }
-      show($('closedCard'), false); show($('scanWrap'), true);
-      if (r.students) { D.students = r.students; D.version = r.version; indexData(); }
-      saveData();
-      ATT = {}; (r.attended || []).forEach(function (c) { ATT[c] = true; });
-      if (r.mine) { MINE = r.mine; saveMine(); }
-      setCount(r.todayCount);
-      renderHeader(); show($('block'), false);
-      if (srvOld(r.ver)) setStatus('warn', 'الخادم بنسخة قديمة (' + (r.ver || 'غير محددة') + '). الصق Code.gs الجديد ثم Deploy ← Manage deployments ← Edit ← New version، وتأكد أن رابط /exec في config.js هو نفس رابط هذا النشر.' + srvNote());
-      renderLog(); updateQueueChip(); processQueue();
-    }).catch(function (e) {
-      if (!hasLocal) blockScreen('تعذر الاتصال', errText(e));
-      else {
-        setStatus('warn', 'وضع غير متصل: يعمل بالبيانات المحفوظة، وسيتم رفع التسجيلات عند عودة الاتصال.');
-        clearTimeout(S.initRetry); S.initRetry = setTimeout(function () { refreshInit(D.version, true); }, 10000);
-      }
-    });
+      S.students = r.students;
+      S.index = r.students.map(function (x) { return norm(x[0] + ' ' + x[1]); });
+      $('title').textContent = r.title;
+      $('semChip').textContent = r.semester;
+      $('countChip').textContent = r.todayCount;
+      $('userChip').textContent = AUTH.email;
+      show($('block'), false);
+      try { $('autoSave').checked = localStorage.getItem('autoSave') === '1'; } catch (e) {}
+    }).catch(function (e) { blockScreen('حدث خطأ', errText(e)); });
   }
-
-  /* ---------- زر التحديث: قراءة آخر 300 سجل من شيت Attendance ---------- */
-  function doRefresh() {
-    if (!AUTH.email || S.refreshing) return;
-    S.refreshing = true;
-    var chip = $('refreshChip'); chip.textContent = '⏳ جاري التحديث...';
-    api('refresh').then(function (r) {
-      S.refreshing = false; chip.textContent = '🔄 تحديث';
-      if (!r || !r.ok) {
-        if (r && AUTH_CODES.indexOf(r.code) > -1) { showLogin(r.message, r.code === 'PIN_REQUIRED' || r.code === 'BAD_PIN'); return; }
-        if (r && r.code === 'BAD_ACTION') { toast('الخادم لا يدعم التحديث بعد (نسخته ' + (r.ver || 'قديمة') + '). الصق Code.gs الجديد وانشر New version.' + srvNote(), 'err'); return; }
-        toast(r ? r.message : 'خطأ', 'err'); return;
-      }
-      setSrvInfo(r.ver);
-      ATT = {}; (r.attended || []).forEach(function (c) { ATT[c] = true; });
-      MINE = r.mine || []; saveMine();
-      setCount(r.todayCount); renderLog(); updateQueueChip();
-      toast('✔ تم التحديث من الشيت (آخر ' + r.limit + ' سجل) · سجلاتك اليوم: ' + MINE.length + ' · إجمالي حضور اليوم: ' + r.todayCount, 'ok');
-      if (!$('reportView').classList.contains('hidden')) loadReport();
-      processQueue();
-    }).catch(function (e) { S.refreshing = false; chip.textContent = '🔄 تحديث'; toast(errText(e), 'err'); });
-  }
-  $('refreshChip').addEventListener('click', doRefresh);
-
-  /* ---------- مسح كاش الصفحة (لا يمس حسابك ولا التسجيلات غير المرفوعة) ---------- */
-  $('hardLink').addEventListener('click', function (ev) {
-    ev.preventDefault();
-    if (!confirm('سيتم مسح نسخة الصفحة المخزنة في هذا الجهاز وإعادة تحميلها من الخادم. حسابك والتسجيلات غير المرفوعة لن تتأثر. متابعة؟')) return;
-    try { localStorage.removeItem(LS_DATA); localStorage.removeItem(LS_MINE); } catch (e) {}
-    var jobs = [];
-    if ('serviceWorker' in navigator) jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) { return Promise.all(regs.map(function (r) { return r.unregister(); })); }));
-    if (window.caches) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
-    Promise.all(jobs).catch(function () {}).then(function () { location.replace(location.pathname + '?r=' + Date.now()); });
-  });
-
   $('loginBtn').addEventListener('click', function () {
     AUTH.email = $('emailInput').value.trim().toLowerCase();
     AUTH.pin = $('pinInput').value.trim();
@@ -541,28 +241,21 @@
   $('emailInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('loginBtn').click(); });
   $('pinInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('loginBtn').click(); });
   $('logoutChip').addEventListener('click', function () {
-    var pend = ITEMS.filter(function (i) { return i.state === 'pending' || i.state === 'sending'; }).length;
-    if (pend && !confirm('يوجد ' + pend + ' تسجيل لم يُرفع بعد. هل تريد تغيير الحساب؟ (سيتم رفعها عند الدخول مرة أخرى)')) return;
-    stopScan(); clearAuth(); clearData(); MINE = []; renderLog(); resetCard();
-    show($('reportView'), false); show($('adminView'), false); show($('mainView'), true);
+    stopScan();
+    clearAuth();
+    resetAll();
     showLogin('');
   });
-  $('autoSave').checked = (function () { try { return localStorage.getItem('autoSave') !== '0'; } catch (e) { return true; } })();
-  $('autoSave').addEventListener('change', function () { try { localStorage.setItem('autoSave', this.checked ? '1' : '0'); } catch (e) {} });
 
-  /* ---------- علامة النجاح/الفشل في منتصف الكاميرا ---------- */
-  var SVG_OK = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.6 4.6L19 7.4" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  var SVG_ERR = '<svg viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/></svg>';
-  var markTimer = null;
-  function flashMark(type) {
-    var m = $('scanMark');
-    m.innerHTML = type === 'ok' ? SVG_OK : SVG_ERR;
-    m.className = 'scanmark ' + type;
-    void m.offsetWidth;                      // لإعادة تشغيل الحركة عند التكرار السريع
-    m.classList.add('show');
-    clearTimeout(markTimer);
-    markTimer = setTimeout(function () { m.classList.remove('show'); }, 1200);
+  function blockScreen(t, m) {
+    $('blockTitle').textContent = t;
+    $('blockMsg').textContent = m || '';
+    show($('block'), true);
   }
+
+  $('autoSave').addEventListener('change', function () {
+    try { localStorage.setItem('autoSave', this.checked ? '1' : '0'); } catch (e) {}
+  });
 
   /* ---------- camera ---------- */
   function getQr() {
@@ -577,40 +270,42 @@
   }
   function startScan() {
     show($('camMsg'), false);
-    $('readerWrap').style.display = 'block';
-    return getQr().start(
+    $('reader').style.display = 'block';
+    var q = getQr();
+    return q.start(
       { facingMode: 'environment' },
-      { fps: 12, qrbox: function (w, h) { var s = Math.floor(Math.min(w, h) * 0.7); return { width: s, height: s }; } },
+      { fps: 10, qrbox: function (w, h) { var s = Math.floor(Math.min(w, h) * 0.7); return { width: s, height: s }; } },
       onScan, function () {}
     ).then(function () {
-      S.scanning = true; S.paused = false; $('camBtn').textContent = 'إيقاف الكاميرا';
+      S.scanning = true;
+      $('camBtn').textContent = 'إيقاف الكاميرا';
     }).catch(function (e) {
-      $('readerWrap').style.display = 'none';
+      $('reader').style.display = 'none';
       var m = $('camMsg');
       m.textContent = 'تعذر تشغيل الكاميرا. اسمح بالوصول للكاميرا من إعدادات المتصفح، أو استخدم "مسح من صورة" أو البحث اليدوي. (' + errText(e) + ')';
       show(m, true);
     });
   }
   function stopScan() {
-    if (!qr || !S.scanning) { $('readerWrap').style.display = 'none'; return Promise.resolve(); }
+    if (!qr || !S.scanning) { $('reader').style.display = 'none'; return Promise.resolve(); }
     return qr.stop().catch(function () {}).then(function () {
-      S.scanning = false; S.paused = false; $('readerWrap').style.display = 'none'; $('camBtn').textContent = 'فتح الكاميرا';
+      S.scanning = false;
+      $('reader').style.display = 'none';
+      $('camBtn').textContent = 'فتح الكاميرا';
     });
   }
-  function pauseScan() { try { if (S.scanning && !S.paused) { qr.pause(true); S.paused = true; } } catch (e) {} }
-  function resumeScan() { try { if (S.scanning && S.paused) { qr.resume(); S.paused = false; } } catch (e) {} }
   $('camBtn').addEventListener('click', function () { S.scanning ? stopScan() : startScan(); });
 
   function onScan(text) {
     var code = String(text || '').trim().toUpperCase();
-    var now = Date.now();
-    if (code === S.last.code && now - S.last.t < 4000) return;   // نفس الكود: تجاهل
     if (!CODE_RE.test(code)) {
-      if (now - S.lastBad > 2500) { S.lastBad = now; beep(false); flashMark('err'); setStatus('err', 'QR غير صالح: ' + esc(code.substring(0, 40))); }
+      var now = Date.now();
+      if (now - S.lastBad > 2500) { S.lastBad = now; beep(false); setStatus('err', 'QR غير صالح: ' + esc(code.substring(0, 40))); }
       return;
     }
-    S.last = { code: code, t: now };
-    handleCode(code, true);
+    if (S.busy) return;
+    beep(true);
+    stopScan().then(function () { choose(code, true); });
   }
 
   $('photoBtn').addEventListener('click', function () { $('photoInput').click(); });
@@ -618,10 +313,13 @@
     var f = this.files && this.files[0];
     this.value = '';
     if (!f) return;
-    stopScan().then(function () { return getQr().scanFile(f, false); }).then(function (text) {
+    stopScan().then(function () {
+      $('reader').style.display = 'none';
+      return getQr().scanFile(f, false);
+    }).then(function (text) {
       var code = String(text || '').trim().toUpperCase();
       if (!CODE_RE.test(code)) { setStatus('err', 'QR غير صالح'); return; }
-      handleCode(code, true);
+      choose(code, true);
     }).catch(function () { setStatus('err', 'لم يتم العثور على QR في الصورة، حاول مرة أخرى بصورة أوضح.'); });
   });
 
@@ -629,8 +327,8 @@
   $('search').addEventListener('input', renderResults);
   $('search').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') {
-      var m = this.value.trim().toUpperCase().match(/MK\d{8}/);
-      if (m) { handleCode(m[0], false); this.blur(); }
+      var raw = this.value.trim().toUpperCase().match(/MK\d{8}/);
+      if (raw) { choose(raw[0], false); this.blur(); }
     }
   });
   function renderResults() {
@@ -640,526 +338,183 @@
     if (q.length < 2) return;
     var tokens = q.split(' ');
     var n = 0;
-    for (var i = 0; i < D.students.length && n < 30; i++) {
+    for (var i = 0; i < S.students.length && n < 30; i++) {
       var ok = true;
-      for (var t = 0; t < tokens.length; t++) { if (D.search[i].indexOf(tokens[t]) === -1) { ok = false; break; } }
+      for (var t = 0; t < tokens.length; t++) { if (S.index[i].indexOf(tokens[t]) === -1) { ok = false; break; } }
       if (!ok) continue;
       n++;
-      var s = D.students[i];
       var d = document.createElement('div');
-      d.className = 'item' + (s[2] ? '' : ' off');
-      d.innerHTML = '<b>' + esc(s[0]) + '</b> - ' + esc(s[1]) + (s[2] ? (ATT[s[0]] ? ' ✔' : '') : ' (غير مسجل بالفصل)');
-      d.setAttribute('data-id', s[0]);
-      d.addEventListener('click', function () { handleCode(this.getAttribute('data-id'), false); });
+      d.className = 'item';
+      d.innerHTML = '<b>' + esc(S.students[i][0]) + '</b> - ' + esc(S.students[i][1]);
+      d.setAttribute('data-id', S.students[i][0]);
+      d.addEventListener('click', function () { choose(this.getAttribute('data-id'), false); });
       box.appendChild(d);
     }
     if (!n) box.innerHTML = '<div class="hint">لا توجد نتائج</div>';
   }
 
-  /* ---------- core flow ---------- */
-  function handleCode(code, fromScan) {
-    var s = D.map[code];
-    if (s && s[2]) return proceed(s, fromScan);
-    // غير موجود/غير مسجل محليًا: اسأل السيرفر (قد يكون طالب جديد)
-    setStatus('warn', 'جاري التحقق من الكود...');
-    api('preview', { code: code }).then(function (r) {
-      if (!r || !r.ok) {
-        if (r && AUTH_CODES.indexOf(r.code) > -1) { showLogin(r.message, r.code === 'PIN_REQUIRED' || r.code === 'BAD_PIN'); return; }
-        setStatus('err', esc(r ? r.message : 'خطأ')); beep(false); if (fromScan) flashMark('err'); return;
-      }
-      clearStatus();
-      var rec = [r.code, r.name, 1, String(r.module), String(r.cls), r.image || ''];
-      if (D.map[r.code]) { Object.keys(D.map[r.code]).forEach(function (k) { D.map[r.code][k] = rec[k]; }); }
-      else { D.students.push(rec); D.map[r.code] = rec; D.search.push(norm(rec[0] + ' ' + rec[1])); }
-      saveData();
-      proceed(rec, fromScan);
-    }).catch(function (e) { setStatus('err', esc(errText(e))); });
-  }
-
-  function isPending(code) {
-    return ITEMS.some(function (i) { return i.code === code && (i.state === 'pending' || i.state === 'sending'); });
-  }
-
-  function proceed(s, fromScan) {
+  /* ---------- choose + preview ---------- */
+  function choose(code, fromScan) {
+    if (S.busy) return;
+    S.busy = true;
     clearStatus();
-    var code = s[0];
-    if (ATT[code] || isPending(code)) {
-      showCard(s, 'dup'); beep(false); if (fromScan) flashMark('err'); return;
+    show($('preview'), false);
+    setStatus('warn', 'جاري التحقق من الكود...');
+    run('previewStudent', AUTH, code).then(function (r) {
+      S.busy = false;
+      if (!r || !r.ok) { clearStatus(); setStatus('err', esc(r ? r.message : 'خطأ')); beep(false); return; }
+      clearStatus();
+      S.current = r;
+      fillPreview(r);
+      if (fromScan && $('autoSave').checked && !r.alreadyToday) submit();
+    }).catch(function (e) { S.busy = false; setStatus('err', esc(errText(e))); });
+  }
+
+  function fillPreview(r) {
+    $('pvName').textContent = r.name;
+    $('pvCode').textContent = r.code;
+    $('pvSem').textContent = r.semester;
+    $('pvMod').textContent = r.module;
+    $('pvCls').textContent = r.cls;
+    $('notes').value = '';
+    setAvatar(r);
+    var w = $('pvWarn');
+    if (r.alreadyToday) {
+      w.textContent = 'تم تسجيل حضور هذا الطالب مسبقًا اليوم.';
+      show(w, true);
+      $('saveBtn').disabled = true;
+    } else {
+      show(w, false);
+      $('saveBtn').disabled = false;
     }
-    if (fromScan && $('autoSave').checked) {
-      enqueue(s, ''); showCard(s, 'pending'); beep(true); flashMark('ok'); return;
-    }
-    if (fromScan) pauseScan();
-    showCard(s, 'confirm');
+    show($('preview'), true);
+    $('preview').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-
-  function showCard(s, mode) {
-    S.current = s; S.cardCode = s[0];
-    $('pvName').textContent = s[1]; $('pvCode').textContent = s[0];
-    $('pvSem').textContent = D.semester; $('pvMod').textContent = s[3]; $('pvCls').textContent = s[4];
-    var a = $('avatar'); a.innerHTML = '';
-    a.textContent = (s[1] || '?').charAt(0);
-    show($('imgWhy'), false);
-    loadAvatar(s);
-    show($('confirmBox'), mode === 'confirm');
-    if (mode === 'confirm') { $('notes').value = ''; $('saveBtn').disabled = false; setBadge('pending', 'بانتظار التأكيد'); }
-    else if (mode === 'pending') setBadge('pending', '⏳ جاري الحفظ...');
-    else if (mode === 'dup') setBadge('err', 'تم تسجيل حضوره مسبقًا اليوم');
-    show($('studentCard'), true);
-    if (mode === 'confirm') $('studentCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  /* ---------- student photos (Drive) : تحميل مرة واحدة ثم كاش على الجهاز ---------- */
-  var LS_IMG = 'att_img_v3', IMG_MAX = 200, IMG_PENDING = {}, IMG_NONE = {};
-  function imgStore() { try { return JSON.parse(localStorage.getItem(LS_IMG) || '{"o":[],"m":{}}'); } catch (e) { return { o: [], m: {} }; } }
-  function imgGet(code, ref) { var st = imgStore(), e = st.m[code]; return (e && e.r === ref) ? e.d : ''; }
-  function imgPut(code, ref, data) {
-    if (!data || data.length > 150000) return;
-    var st = imgStore();
-    if (!st.m[code]) st.o.push(code);
-    st.m[code] = { r: ref, d: data };
-    while (st.o.length > IMG_MAX) { delete st.m[st.o.shift()]; }
-    try { localStorage.setItem(LS_IMG, JSON.stringify(st)); } catch (e) {
-      try { st = { o: [code], m: {} }; st.m[code] = { r: ref, d: data }; localStorage.setItem(LS_IMG, JSON.stringify(st)); } catch (e2) {}
-    }
-  }
-  function paintAvatar(code, src, onFail) {
-    if (S.cardCode !== code) return;
-    var img = new Image(); img.referrerPolicy = 'no-referrer'; img.style.cssText = 'width:100%;height:100%;object-fit:cover';
-    img.onload = function () { if (S.cardCode === code) { var a = $('avatar'); a.innerHTML = ''; a.appendChild(img); show($('imgWhy'), false); } };
-    img.onerror = function () { if (onFail) onFail(); };
-    img.src = src;
-  }
-  var WHY = {
-    no_ref: 'لا يوجد اسم صورة لهذا الطالب في العمود K',
-    no_student: 'الطالب غير موجود في Codes',
-    not_found: 'لم يتم العثور على ملف الصورة داخل مجلد Drive (تأكد من الاسم)',
-    BAD_ACTION: 'الخادم قديم: الصق Code.gs الجديد ثم Deploy ← New version (الرابط ' + urlTag() + ')'
-  };
-  function whyImg(code, text) {
-    if (S.cardCode !== code) return;
-    var w = $('imgWhy'); w.textContent = '🖼 ' + text; show(w, true);
-  }
-  function loadAvatar(s) {
-    var code = s[0], ref = s[5];
-    if (!ref) { whyImg(code, WHY.no_ref); return; }
-    var hit = imgGet(code, ref);
-    if (hit) { paintAvatar(code, hit); return; }
-    if (IMG_NONE[code]) { whyImg(code, IMG_NONE[code]); return; }
-    if (IMG_PENDING[code]) return;
-    IMG_PENDING[code] = true;
-    api('image', { code: code }).then(function (r) {
-      delete IMG_PENDING[code];
-      if (!r) { whyImg(code, 'رد غير صالح من الخادم'); return; }
-      if (!r.ok) { var m = WHY[r.code] || r.message || 'خطأ'; IMG_NONE[code] = m; whyImg(code, m); return; }
-      var src = r.data || r.url || '';
-      if (!src) { var m2 = WHY[r.why] || ('لا توجد صورة (' + (r.why || '?') + ')'); IMG_NONE[code] = m2; whyImg(code, m2); return; }
-      if (r.data) imgPut(code, ref, r.data);
-      paintAvatar(code, src, function () { whyImg(code, 'تعذر عرض الصورة في المتصفح (الملف غير مشارك للعرض). أعد المحاولة أو راجع فحص الصور'); });
-    }).catch(function () { delete IMG_PENDING[code]; whyImg(code, 'تعذر الاتصال بالخادم لتحميل الصورة'); });
-  }
-
-  function setBadge(type, text) { var b = $('pvBadge'); b.className = 'badge ' + type; b.textContent = text; }
-  function resetCard() {
-    S.current = null; S.cardCode = '';
-    show($('studentCard'), false); show($('confirmBox'), false);
-    $('search').value = ''; $('results').innerHTML = '';
-  }
-
-  $('saveBtn').addEventListener('click', function () {
-    if (!S.current) return;
-    var s = S.current;
-    $('saveBtn').disabled = true;
-    enqueue(s, $('notes').value);
-    if (S.scanning) flashMark('ok');
-    show($('confirmBox'), false); setBadge('pending', '⏳ جاري الحفظ...');
-    $('search').value = ''; $('results').innerHTML = '';
-    resumeScan();
-  });
-  $('cancelBtn').addEventListener('click', function () { resetCard(); resumeScan(); });
-
-  /* ---------- queue (حفظ سريع على دفعات) ---------- */
-  function enqueue(s, notes) {
-    ITEMS.push({ code: s[0], name: s[1], notes: notes || '', rid: newRid(), state: 'pending' });
-    persistQueue(); renderLog(); updateQueueChip();
-    processQueue();
-  }
-
-  function processQueue() {
-    if (S.sending) return;
-    var batch = ITEMS.filter(function (i) { return i.state === 'pending'; }).slice(0, 15);
-    if (!batch.length) { updateQueueChip(); return; }
-    S.sending = true;
-    batch.forEach(function (i) { i.state = 'sending'; });
-    api('submit', { items: batch.map(function (i) { return { code: i.code, notes: i.notes, rid: i.rid }; }) }).then(function (r) {
-      S.sending = false;
-      if (!r || !r.results) {
-        var code = r && r.code;
-        if (code && AUTH_CODES.indexOf(code) > -1) {
-          batch.forEach(function (i) { i.state = 'pending'; });
-          persistQueue(); updateQueueChip(); showLogin(r.message, code === 'PIN_REQUIRED' || code === 'BAD_PIN'); return;
-        }
-        if (code === 'BUSY' || code === 'ERROR') {
-          batch.forEach(function (i) { i.state = 'pending'; });
-          scheduleRetry(3000);
-        } else {
-          batch.forEach(function (i) { i.state = 'err'; i.msg = r ? r.message : 'خطأ'; });
-        }
-      } else {
-        r.results.forEach(function (res, idx) {
-          var it = batch[idx]; if (!it) return;
-          if (res.ok) { it.state = 'ok'; it.time = res.time; ATT[it.code] = true; }
-          else if (res.err === 'DUPLICATE' && it.maybeSent) { it.state = 'ok'; it.time = 'تم'; ATT[it.code] = true; }   // الرد ضاع سابقًا لكن التسجيل تم
-          else if (res.err === 'DUPLICATE') { it.state = 'dup'; ATT[it.code] = true; }
-          else { it.state = 'err'; it.msg = res.message; }
-        });
-        batch.forEach(function (it) { if (it.state === 'ok') addMine(it.code, it.name, it.time); });
-        if (typeof r.todayCount === 'number') setCount(r.todayCount);
-      }
-      persistQueue(); renderLog(); updateQueueChip(); refreshCardBadge();
-      processQueue();
-    }).catch(function () {
-      S.sending = false;
-      batch.forEach(function (i) { i.state = 'pending'; i.maybeSent = true; });   // قد يكون وصل للسيرفر وضاع الرد
-      persistQueue(); updateQueueChip();
-      scheduleRetry(4000);
-    });
-  }
-  function scheduleRetry(ms) { clearTimeout(retryTimer); retryTimer = setTimeout(processQueue, ms); }
-  window.addEventListener('online', processQueue);
-
-  function refreshCardBadge() {
-    if (!S.cardCode) return;
-    for (var i = ITEMS.length - 1; i >= 0; i--) {
-      var it = ITEMS[i];
-      if (it.code !== S.cardCode) continue;
-      if (it.state === 'ok') setBadge('ok', '✔ تم تسجيل الحضور ' + (it.time && it.time !== 'تم' ? it.time : ''));
-      else if (it.state === 'dup') setBadge('err', 'تم تسجيل حضوره مسبقًا اليوم');
-      else if (it.state === 'err') setBadge('err', '✖ ' + (it.msg || 'فشل التسجيل'));
-      else setBadge('pending', '⏳ جاري الحفظ...');
-      return;
+  function setAvatar(r) {
+    var a = $('avatar');
+    a.innerHTML = '';
+    if (r.image) {
+      var img = new Image();
+      img.referrerPolicy = 'no-referrer';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover';
+      img.onerror = function () { a.textContent = (r.name || '?').charAt(0); };
+      img.src = r.image;
+      a.appendChild(img);
+    } else {
+      a.textContent = (r.name || '?').charAt(0);
     }
   }
 
-  /** القائمة الكاملة: المنتظرون ⏳ ثم الأخطاء/المكرر في هذه الجلسة ثم كل ما سجّله المستخدم اليوم (الأحدث أولًا). */
-  function renderLog() {
-    var l = $('log'); l.innerHTML = '';
-    var rows = [];
-    for (var i = ITEMS.length - 1; i >= 0; i--) {
-      var it = ITEMS[i];
-      if (it.state === 'pending' || it.state === 'sending') rows.push(['⏳', '#a56a00', it.name || it.code, 'جاري الحفظ']);
-    }
-    var bad = ITEMS.filter(function (x) { return x.state === 'err' || x.state === 'dup'; }).slice(-5).reverse();
-    bad.forEach(function (it) {
-      rows.push(['✖', '#b3261e', it.name || it.code, it.state === 'dup' ? 'مسجل سابقًا' : (it.msg || 'فشل')]);
-    });
-    for (var j = MINE.length - 1; j >= 0; j--) rows.push(['✔', '#1e7b46', MINE[j][1], MINE[j][2] || '']);
-    var frag = document.createDocumentFragment();
-    rows.forEach(function (r) {
-      var d = document.createElement('div');
-      d.innerHTML = '<span><b style="color:' + r[1] + '">' + r[0] + '</b> ' + esc(r[2]) + '</span><span class="t">' + esc(r[3]) + '</span>';
-      frag.appendChild(d);
-    });
-    l.appendChild(frag);
-    $('mineCount').textContent = MINE.length;
-    show($('logCard'), rows.length > 0);
+  $('cancelBtn').addEventListener('click', resetAll);
+  function resetAll() {
+    S.current = null;
+    show($('preview'), false);
+    $('search').value = '';
+    $('results').innerHTML = '';
   }
 
-  /* ================= Report (أعداد وأسماء الحاضرين لكل موديول وفصل) ================= */
-  var REP = null, REPOPTS = { mode: 'today' }, REPNAMES = false;
-  function fmtDate(ymd) { var m = String(ymd || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? (m[2] + '/' + m[3] + '/' + m[1]) : ''; }
-  function pct(a, b) { return b > 0 ? Math.round(a * 100 / b) : 0; }
-  function repMsg(type, text) { var m = $('repMsg'); m.className = 'msg ' + type; m.textContent = text; show(m, !!text); }
-  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
-  function natCmp(a, b) {
-    var ax = String(a).match(/\d+|\D+/g) || [], bx = String(b).match(/\d+|\D+/g) || [];
-    for (var i = 0; i < Math.min(ax.length, bx.length); i++) {
-      if (ax[i] === bx[i]) continue;
-      if (/^\d+$/.test(ax[i]) && /^\d+$/.test(bx[i])) { var d = Number(ax[i]) - Number(bx[i]); if (d) return d; }
-      else return ax[i] < bx[i] ? -1 : 1;
-    }
-    return ax.length - bx.length;
-  }
-
-  function openReport() {
-    stopScan();
-    show($('mainView'), false); show($('adminView'), false); show($('reportView'), true);
-    show($('repFilter'), S.isAdmin);
-    $('repMode').value = 'today'; syncRepMode();
-    loadReport();
-  }
-  function closeReport() { show($('reportView'), false); show($('mainView'), true); }
-
-  function syncRepMode() {
-    var m = $('repMode').value;
-    show($('repDates'), m === 'day' || m === 'range');
-    show($('repToWrap'), m === 'range');
-  }
-
-  function loadReport() {
-    var opts = { mode: 'today' };
-    if (S.isAdmin) {
-      opts.mode = $('repMode').value;
-      if (opts.mode === 'day' || opts.mode === 'range') {
-        opts.from = $('repFrom').value;
-        if (opts.mode === 'range') opts.to = $('repTo').value;
-        if (!opts.from || (opts.mode === 'range' && !opts.to)) { repMsg('warn', 'اختر التاريخ أولًا.'); return; }
-      }
-    }
-    repMsg('warn', 'جاري تحميل التقرير...');
-    var b = $('repGo'); b.disabled = true;
-    api('report', { opts: opts }).then(function (r) {
-      b.disabled = false;
+  /* ---------- submit ---------- */
+  $('saveBtn').addEventListener('click', submit);
+  function submit() {
+    if (!S.current || S.busy) return;
+    S.busy = true;
+    var b = $('saveBtn');
+    b.disabled = true;
+    b.innerHTML = 'جاري الحفظ<span class="spin"></span>';
+    run('submitAttendance', AUTH, S.current.code, $('notes').value).then(function (r) {
+      S.busy = false;
+      b.innerHTML = '✔ تأكيد الحضور';
       if (!r || !r.ok) {
-        if (r && AUTH_CODES.indexOf(r.code) > -1) { closeReport(); showLogin(r.message, r.code === 'PIN_REQUIRED' || r.code === 'BAD_PIN'); return; }
-        repMsg('err', r ? (r.code === 'BAD_ACTION' ? ('الخادم لا يعرف طلب التقرير: النشر الذي يعمل عليه الرابط ' + urlTag() + ' نسخته ' + (r.ver || 'قديمة') + '. المطلوب ' + NEED_SERVER + ' أو أحدث.') : r.message) : 'خطأ'); return;
+        beep(false);
+        setStatus('err', esc(r ? r.message : 'خطأ'));
+        b.disabled = (r && r.code === 'DUPLICATE');
+        return;
       }
-      repMsg('', '');
-      REP = r; REPOPTS = opts;
-      show($('repTools'), true); show($('repExport'), S.isAdmin);
-      buildFilters(); renderReport();
-    }).catch(function (e) { b.disabled = false; repMsg('err', errText(e)); });
-  }
-
-  function setOptions(sel, items, allLabel) {
-    var cur = sel.value;
-    sel.innerHTML = '';
-    var o = document.createElement('option'); o.value = ''; o.textContent = allLabel; sel.appendChild(o);
-    items.forEach(function (t) { var x = document.createElement('option'); x.value = t; x.textContent = t; sel.appendChild(x); });
-    sel.value = items.indexOf(cur) > -1 ? cur : '';
-  }
-  function classNames(modName) {
-    var seen = {}, out = [];
-    REP.modules.forEach(function (m) {
-      if (modName && m.name !== modName) return;
-      m.classes.forEach(function (c) { if (!seen[c.name]) { seen[c.name] = 1; out.push(c.name); } });
-    });
-    return out.sort(natCmp);
-  }
-  function buildFilters() {
-    setOptions($('fMod'), REP.modules.map(function (m) { return m.name; }), 'كل الموديولات');
-    setOptions($('fCls'), classNames($('fMod').value), 'كل الفصول');
-  }
-  function sumOf(list, key) { return list.reduce(function (n, x) { return n + x[key]; }, 0); }
-
-  function renderReport() {
-    var r = REP; if (!r) return;
-    var multi = (r.mode === 'range' || r.mode === 'all');
-    var fm = $('fMod').value, fc = $('fCls').value, filtered = !!(fm || fc);
-    var title = r.mode === 'today' ? ('اليوم ' + fmtDate(r.from))
-      : r.mode === 'day' ? ('يوم ' + fmtDate(r.from))
-      : r.mode === 'range' ? ('من ' + fmtDate(r.from) + ' إلى ' + fmtDate(r.to))
-      : 'كل الأيام';
-    $('repSub').textContent = 'الفصل الدراسي ' + r.semester + ' · ' + title + (S.isAdmin ? '' : ' · (اليوم الحالي فقط)')
-      + (filtered ? ' · تصفية: ' + [fm && ('الموديول ' + fm), fc && ('الفصل ' + fc)].filter(Boolean).join(' / ') : '');
-
-    // الموديولات بعد التصفية (مع إعادة حساب أعداد الموديول عند تصفية الفصل)
-    var mods = r.modules.filter(function (m) { return !fm || m.name === fm; }).map(function (m) {
-      var cls = m.classes.filter(function (c) { return !fc || c.name === fc; });
-      return { name: m.name, classes: cls, attended: fc ? sumOf(cls, 'attended') : m.attended, enrolled: fc ? sumOf(cls, 'enrolled') : m.enrolled };
-    }).filter(function (m) { return m.classes.length; });
-
-    var totAtt = r.totalAttended, totEnr = r.enrolledTotal, totRec = r.totalRecords;
-    if (filtered) {
-      totAtt = sumOf(mods, 'attended'); totEnr = sumOf(mods, 'enrolled');
-      totRec = mods.reduce(function (n, m) { return n + sumOf(m.classes, 'records'); }, 0);
-    }
-    $('sumLbl1').textContent = multi ? 'طلاب حضروا' : 'حضروا';
-    $('sumAtt').textContent = totAtt;
-    $('sumEnr').textContent = totEnr;
-    $('sumLbl3').textContent = multi ? 'عدد الأيام' : 'النسبة';
-    $('sumPct').textContent = multi ? r.daysCount : (pct(totAtt, totEnr) + '%');
-    $('sumNote').textContent = multi ? ('إجمالي مرات الحضور: ' + totRec + ' (طالب × يوم)') : '';
-    show($('repSummary'), true);
-    $('repNames').textContent = REPNAMES ? '👥 إخفاء الأسماء' : '👥 إظهار كل الأسماء';
-
-    var box = $('repModules'); box.innerHTML = '';
-    if (!mods.length) { box.appendChild(el('div', 'hint', r.modules.length ? 'لا توجد نتائج بهذه التصفية.' : 'لا توجد بيانات لهذا الفصل الدراسي.')); }
-    mods.forEach(function (m) {
-      var card = el('div', 'mod');
-      var head = el('div', 'mh');
-      head.appendChild(el('span', '', 'الموديول: ' + m.name));
-      head.appendChild(el('span', 'num', m.attended + ' / ' + m.enrolled + (multi ? '' : '  (' + pct(m.attended, m.enrolled) + '%)')));
-      card.appendChild(head);
-      var meter = el('div', 'meter'); var fill = el('i'); fill.style.width = Math.min(100, pct(m.attended, m.enrolled)) + '%'; meter.appendChild(fill);
-      card.appendChild(meter);
-      m.classes.forEach(function (c) {
-        var wrap = el('div', 'clsw');
-        var open = REPNAMES || !!fc;
-        var row = el('div', 'cls');
-        var left = el('span', '');
-        var arrow = el('span', 'arrow', open ? '▾' : '▸'); left.appendChild(arrow);
-        left.appendChild(document.createTextNode('الفصل: ' + c.name));
-        if (multi) { left.appendChild(document.createTextNode(' ')); left.appendChild(el('small', '', '(مرات الحضور ' + c.records + ')')); }
-        row.appendChild(left);
-        row.appendChild(el('span', 'num', c.attended + ' / ' + c.enrolled));
-        var names = el('div', 'names' + (open ? '' : ' hidden'));
-        if (!c.people.length) names.appendChild(el('div', 'hint', 'لا يوجد حضور'));
-        c.people.forEach(function (p) {
-          var line = el('div', 'nm');
-          var nm = el('span', '', p[1]); nm.appendChild(el('small', '', p[0]));
-          line.appendChild(nm);
-          line.appendChild(el('span', 't', typeof p[2] === 'number' ? (p[2] + ' يوم') : (p[2] || '')));
-          names.appendChild(line);
-        });
-        row.addEventListener('click', function () { var hid = names.classList.toggle('hidden'); arrow.textContent = hid ? '▸' : '▾'; });
-        wrap.appendChild(row); wrap.appendChild(names);
-        card.appendChild(wrap);
-      });
-      box.appendChild(card);
-    });
-
-    var dl = $('repDays'); dl.innerHTML = '';
-    show($('repDaysCard'), multi && r.days.length > 0);
-    show($('repDaysNote'), filtered);
-    r.days.forEach(function (d) {
-      var row = el('div', 'dayrow');
-      row.appendChild(el('span', '', fmtDate(d.date)));
-      row.appendChild(el('span', 't', d.count + ' طالب'));
-      row.addEventListener('click', function () { $('repMode').value = 'day'; syncRepMode(); $('repFrom').value = d.date; loadReport(); window.scrollTo(0, 0); });
-      dl.appendChild(row);
+      beep(true);
+      $('countChip').textContent = r.todayCount;
+      setStatus('ok', '<b>✔ تم تسجيل الحضور بنجاح</b><br>' + esc(r.name) +
+        '<br><bdi dir="ltr">' + esc(r.code) + '</bdi> | الموديول: ' + esc(r.module) + ' | Class: ' + esc(r.cls) +
+        '<br>' + esc(r.date) + ' - ' + esc(r.time));
+      addLog([r.name, r.code, r.module, r.cls, r.date, r.time, AUTH.email]);
+      resetAll();
+    }).catch(function (e) {
+      S.busy = false;
+      b.innerHTML = '✔ تأكيد الحضور';
+      b.disabled = false;
+      setStatus('err', esc(errText(e)));
     });
   }
 
-  /* ---------- تصدير التقرير (أدمن) : CSV يفتح في Excel مع العربية ---------- */
-  function csvCell(v) {
-    var s = String(v == null ? '' : v);
-    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;                 // منع تنفيذ معادلات Excel
-    return '"' + s.replace(/"/g, '""') + '"';
+  /* ---------- log + refresh (last 300, remove duplicates) ---------- */
+  // row = [name, code, module, class, date, time, user]
+  function logRowEl(x) {
+    var d = document.createElement('div');
+    d.className = 'lr';
+    d.innerHTML = '<div class="t"><span>' + esc(x[0]) + '</span><span class="tm">' + esc(x[5]) + '</span></div>' +
+      '<div class="s"><bdi dir="ltr">' + esc(x[1]) + '</bdi> · ' + esc(x[2]) + ' · ' + esc(x[3]) + ' · <bdi dir="ltr">' + esc(x[4]) + '</bdi></div>';
+    return d;
   }
-  function downloadCsv(name, rows) {
-    var text = '\uFEFF' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n');
-    var blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = name;
-    document.body.appendChild(a); a.click();
-    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  function addLog(x) {
+    var l = $('log');
+    var h = $('logHint');
+    if (h) h.remove();
+    l.insertBefore(logRowEl(x), l.firstChild);
+    while (l.children.length > 300) l.removeChild(l.lastChild);
   }
-  function exportReport() {
-    var b = $('repExport'); b.disabled = true; b.textContent = 'جاري التجهيز...';
-    var fm = $('fMod').value, fc = $('fCls').value;
-    api('reportRows', { opts: REPOPTS }).then(function (r) {
-      b.disabled = false; b.textContent = '⬇ تصدير التقرير (Excel)';
-      if (!r || !r.ok) { repMsg('err', r ? r.message : 'خطأ'); return; }
-      var rows = r.rows.filter(function (x) { return (!fm || x[4] === fm) && (!fc || x[5] === fc); });
-      if (!rows.length) { repMsg('warn', 'لا توجد بيانات لتصديرها بهذه الفترة/التصفية.'); return; }
-      var head = ['Date', 'Time', 'Code', 'Name', 'Module', 'Class', 'User', 'Source'];
-      var name = 'attendance_sem' + r.semester + '_' + (r.mode === 'all' ? 'all' : (r.from + (r.to && r.to !== r.from ? '_to_' + r.to : ''))) + (fm ? '_' + fm : '') + (fc ? '_' + fc : '') + '.csv';
-      downloadCsv(name.replace(/[^\w.\-]+/g, '_'), [head].concat(rows));
-      repMsg('ok', 'تم تنزيل الملف (' + rows.length + ' صف)' + (r.truncated ? ' — تم الاقتصار على أول 30000 صف.' : '') + '.');
-    }).catch(function (e) { b.disabled = false; b.textContent = '⬇ تصدير التقرير (Excel)'; repMsg('err', errText(e)); });
+  function renderLog(rows) {
+    var l = $('log');
+    l.innerHTML = '';
+    if (!rows.length) { l.innerHTML = '<div class="hint" id="logHint">لا توجد تسجيلات.</div>'; return; }
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < rows.length; i++) frag.appendChild(logRowEl(rows[i]));
+    l.appendChild(frag);
   }
-
-  $('reportChip').addEventListener('click', openReport);
-  $('repBack').addEventListener('click', closeReport);
-  $('repMode').addEventListener('change', syncRepMode);
-  $('repGo').addEventListener('click', loadReport);
-  $('repRefresh').addEventListener('click', loadReport);
-  $('fMod').addEventListener('change', function () { setOptions($('fCls'), classNames($('fMod').value), 'كل الفصول'); renderReport(); });
-  $('fCls').addEventListener('change', renderReport);
-  $('repNames').addEventListener('click', function () { REPNAMES = !REPNAMES; renderReport(); });
-  $('repExport').addEventListener('click', exportReport);
-
-  /* ================= Admin ================= */
-  function adminMsg(type, text) { var m = $('adminMsg'); m.className = 'msg ' + type; m.textContent = text; show(m, !!text); }
-  function mk(tag, attrs) { var e = document.createElement(tag); for (var k in (attrs || {})) e[k] = attrs[k]; return e; }
-  function field(label, el) { var w = mk('div'); var l = mk('label'); l.textContent = label; w.appendChild(l); w.appendChild(el); return w; }
-
-  function addSetRow(k, v) {
-    var row = mk('div', { className: 'arow set' });
-    var ki = mk('input', { type: 'text', value: k || '', placeholder: 'اسم الإعداد' }); ki.classList.add('k');
-    var vi;
-    if (String(k || '').toLowerCase() === 'attendance status') {
-      vi = mk('select'); ['ON', 'OFF'].forEach(function (o) { var op = mk('option', { value: o, textContent: o }); vi.appendChild(op); });
-      vi.value = String(v || 'ON').toUpperCase();
-    } else { vi = mk('input', { type: 'text', value: v == null ? '' : v, placeholder: 'القيمة' }); }
-    vi.classList.add('v');
-    var two = mk('div', { className: 'two' }); two.appendChild(field('الإعداد', ki)); two.appendChild(field('القيمة', vi));
-    row.appendChild(two); $('setRows').appendChild(row);
-  }
-  function addUserRow(u) {
-    u = u || ['', '', true, '', 'User'];
-    var row = mk('div', { className: 'arow usr' });
-    var em = mk('input', { type: 'text', value: u[0], placeholder: 'email@gmail.com' }); em.classList.add('e', 'ltr');
-    var nm = mk('input', { type: 'text', value: u[1], placeholder: 'اسم المستخدم' }); nm.classList.add('n');
-    var pn = mk('input', { type: 'text', value: u[3], placeholder: 'اختياري' }); pn.classList.add('p', 'ltr');
-    var rl = mk('select'); ['User', 'Admin'].forEach(function (o) { rl.appendChild(mk('option', { value: o, textContent: o === 'Admin' ? 'Admin (أدمن)' : 'User (مستخدم)' })); });
-    rl.value = u[4] === 'Admin' ? 'Admin' : 'User'; rl.classList.add('r');
-    var ac = mk('input', { type: 'checkbox', checked: !!u[2] }); ac.classList.add('a');
-    var chk = mk('label', { className: 'chk' }); chk.appendChild(ac); chk.appendChild(document.createTextNode(' نشط'));
-    row.appendChild(field('البريد', em));
-    var t1 = mk('div', { className: 'two' }); t1.appendChild(field('الاسم', nm)); t1.appendChild(field('PIN', pn));
-    var t2 = mk('div', { className: 'two' }); t2.appendChild(field('الصلاحية', rl)); t2.appendChild(chk);
-    row.appendChild(t1); row.appendChild(t2);
-    $('userRows').appendChild(row);
+  function setDupMsg(type, html) {
+    var m = $('dupMsg');
+    m.className = 'msg ' + type;
+    m.innerHTML = html;
+    show(m, true);
   }
 
-  function openAdmin() {
-    stopScan();
-    show($('mainView'), false); show($('reportView'), false); show($('adminView'), true);
-    adminMsg('warn', 'جاري تحميل الإعدادات...');
-    api('adminGet').then(function (r) {
-      if (!r || !r.ok) { adminMsg('err', r ? r.message : 'خطأ'); return; }
-      $('setRows').innerHTML = ''; $('userRows').innerHTML = '';
-      r.settings.forEach(function (s) { addSetRow(s[0], s[1]); });
-      r.users.forEach(function (u) { addUserRow(u); });
-      adminMsg('', '');
-    }).catch(function (e) { adminMsg('err', errText(e)); });
-  }
-  function closeAdmin() { show($('adminView'), false); show($('mainView'), true); refreshInit(D.version, true); }
-
-  $('adminChip').addEventListener('click', openAdmin);
-  $('adminBack').addEventListener('click', closeAdmin);
-  $('addSet').addEventListener('click', function () { addSetRow('', ''); });
-  $('addUser').addEventListener('click', function () { addUserRow(); });
-
-  $('adminSave').addEventListener('click', function () {
-    var settings = [].map.call(document.querySelectorAll('#setRows .set'), function (r) {
-      return [r.querySelector('.k').value.trim(), r.querySelector('.v').value];
+  $('refreshBtn').addEventListener('click', refreshLog);
+  function refreshLog() {
+    if (S.refreshing || S.busy) return;
+    S.refreshing = true;
+    var b = $('refreshBtn');
+    b.disabled = true;
+    b.textContent = 'جاري التحديث...';
+    show($('dupMsg'), false);
+    run('refreshAttendance', AUTH).then(function (r) {
+      S.refreshing = false;
+      b.disabled = false;
+      b.textContent = '🔄 تحديث';
+      if (!r || !r.ok) { setDupMsg('err', esc(r ? r.message : 'خطأ')); return; }
+      renderLog(r.rows);
+      $('countChip').textContent = r.todayCount;
+      if (r.deleted > 0) {
+        var html = '<b>تم مسح ' + r.deleted + ' تكرار</b> (تم فحص آخر ' + r.scanned + ' تسجيل، وإبقاء أول تسجيل لكل طالب في اليوم)';
+        var max = Math.min(r.details.length, 15);
+        for (var i = 0; i < max; i++) {
+          var d = r.details[i];
+          html += '<div class="li">• ' + esc(d.name) + ' (<bdi dir="ltr">' + esc(d.code) + '</bdi>) - ' + esc(d.date) + ' - صف ' + d.row + '</div>';
+        }
+        if (r.details.length > max) html += '<div class="li">... و' + (r.details.length - max) + ' تكرار آخر</div>';
+        setDupMsg('warn', html);
+        beep(false);
+      } else {
+        setDupMsg('ok', 'لا توجد تكرارات. تم فحص آخر ' + r.scanned + ' تسجيل.');
+      }
+    }).catch(function (e) {
+      S.refreshing = false;
+      b.disabled = false;
+      b.textContent = '🔄 تحديث';
+      setDupMsg('err', esc(errText(e)));
     });
-    var users = [].map.call(document.querySelectorAll('#userRows .usr'), function (r) {
-      return [r.querySelector('.e').value, r.querySelector('.n').value, r.querySelector('.a').checked, r.querySelector('.p').value, r.querySelector('.r').value];
-    });
-    var b = $('adminSave'); b.disabled = true; b.innerHTML = 'جاري الحفظ<span class="spin"></span>';
-    api('adminSave', { payload: { settings: settings, users: users } }).then(function (r) {
-      b.disabled = false; b.textContent = '💾 حفظ كل التعديلات';
-      if (!r || !r.ok) { adminMsg('err', r ? r.message : 'خطأ'); window.scrollTo(0, 0); return; }
-      adminMsg('ok', r.message + ' يتم تطبيقها فورًا.'); window.scrollTo(0, 0);
-    }).catch(function (e) { b.disabled = false; b.textContent = '💾 حفظ كل التعديلات'; adminMsg('err', errText(e)); });
-  });
-
-  $('imgTestBtn').addEventListener('click', function () {
-    var out = $('imgTestOut');
-    var code = $('imgTestCode').value.trim().toUpperCase();
-    out.className = 'msg warn'; out.textContent = 'جاري الفحص...'; show(out, true);
-    api('adminImageTest', { code: code }).then(function (r) {
-      if (!r || !r.ok) { out.className = 'msg err'; out.textContent = r ? (r.code === 'BAD_ACTION' ? WHY.BAD_ACTION : r.message) : 'خطأ'; return; }
-      var bad = r.steps.some(function (s) { return !s.ok; });
-      out.className = 'msg ' + (bad ? 'err' : 'ok');
-      out.textContent = r.steps.map(function (s) { return (s.ok ? '✔ ' : '✖ ') + s.t; }).join('\n');
-    }).catch(function (e) { out.className = 'msg err'; out.textContent = errText(e); });
-  });
-
-  $('adminRefresh').addEventListener('click', function () {
-    adminMsg('warn', 'جاري تحديث بيانات الطلاب...');
-    api('adminRefresh').then(function (r) {
-      adminMsg(r && r.ok ? 'ok' : 'err', r ? r.message : 'خطأ');
-    }).catch(function (e) { adminMsg('err', errText(e)); });
-  });
+  }
 
   /* ---------- boot ---------- */
   loadSaved();
-  loadQueue(); loadMine(); updateQueueChip(); renderLog();      // الطابور وسجلات اليوم المحفوظة تُحمَّل فورًا قبل أي مسح جديد
-  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
-    navigator.serviceWorker.register('sw.js').then(function (reg) { try { reg.update(); } catch (e) {} }).catch(function () {});
-  }
-  if (!API_URL || API_URL.indexOf('PASTE_') === 0) {
-    blockScreen('الإعداد غير مكتمل', 'ضع رابط الـ Web App (/exec) داخل ملف config.js بجانب index.html.');
-  } else if (AUTH.email) {
-    start();
-  } else {
-    showLogin('');
-  }
+  if (AUTH.email) start(); else showLogin('');
 </script>
 </body>
 </html>
