@@ -160,11 +160,27 @@
   var S = { students: [], index: [], current: null, scanning: false, busy: false, refreshing: false, isAdmin: false, lastBad: 0 };
   var qr = null;
 
+  var NO_GAS_MSG = 'تعذر الاتصال بالسيرفر (google.script.run غير متاح). افتح الرابط المنتهي بـ /exec من متصفح Chrome أو Safari مباشرة، وليس من ملف HTML محلي أو من داخل تطبيق (واتساب/تيليجرام/فيسبوك). لو كنت تستخدم رابط Google Sites أو iframe استخدم الرابط المباشر للتطبيق.';
+  function gasReady() {
+    return typeof google !== 'undefined' && google && google.script && google.script.run;
+  }
+  function waitForGas(ms) {
+    return new Promise(function (res, rej) {
+      var t0 = Date.now();
+      (function chk() {
+        if (gasReady()) return res();
+        if (Date.now() - t0 > ms) return rej(new Error(NO_GAS_MSG));
+        setTimeout(chk, 150);
+      })();
+    });
+  }
   function run(fn) {
     var args = Array.prototype.slice.call(arguments, 1);
-    return new Promise(function (res, rej) {
-      var r = google.script.run.withSuccessHandler(res).withFailureHandler(rej);
-      r[fn].apply(r, args);
+    return waitForGas(5000).then(function () {
+      return new Promise(function (res, rej) {
+        var r = google.script.run.withSuccessHandler(res).withFailureHandler(rej);
+        r[fn].apply(r, args);
+      });
     });
   }
   function errText(e) { return (e && e.message) ? e.message : String(e); }
@@ -545,7 +561,8 @@
 
   /* ---------- boot ---------- */
   loadSaved();
-  if (AUTH.email) start(); else showLogin('');
+  if (AUTH.email) start();
+  else waitForGas(5000).then(function () { showLogin(''); }).catch(function (e) { blockScreen('تعذر فتح التطبيق', errText(e)); });
 </script>
 </body>
 </html>
