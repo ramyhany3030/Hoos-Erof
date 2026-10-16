@@ -75,6 +75,13 @@
   .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;max-width:92%;z-index:20;padding:11px 16px;border-radius:14px;font-size:13px;line-height:1.7;color:#fff;background:#3b2c2f;box-shadow:0 6px 22px rgba(0,0,0,.3);text-align:center}
   .toast.ok{background:var(--ok)}
   .toast.err{background:var(--err)}
+  /* شريط تنبيه التكرار: ثابت أعلى الصفحة ليظهر دائمًا */
+  .dupbar{position:sticky;top:0;z-index:15;display:flex;gap:10px;align-items:flex-start;justify-content:center;padding:11px 14px;font-size:14px;font-weight:600;line-height:1.8;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.28)}
+  .dupbar.warn{background:var(--err)}
+  .dupbar.ok{background:var(--ok)}
+  .dupbar .tx{flex:1;text-align:center}
+  .dupbar .x{background:rgba(255,255,255,.22);color:#fff;border-radius:99px;width:28px;height:28px;padding:0;font-size:16px;line-height:1;flex:none}
+  .dupbar small{display:block;font-weight:400;opacity:.92;font-size:12px}
   /* admin */
   .arow{background:#faf6f0;border-radius:12px;padding:10px;margin-bottom:8px;display:grid;gap:6px}
   .arow label{font-size:11px;color:var(--muted);display:block;margin-bottom:2px}
@@ -137,6 +144,8 @@
   </div>
 </header>
 
+<div id="dupBar" class="dupbar warn hidden" role="alert"><div class="tx" id="dupTx"></div><button class="x hidden" id="dupX" title="إغلاق">✕</button></div>
+
 <!-- ================= صفحة الحضور ================= -->
 <main id="mainView">
   <div id="closedCard" class="card hidden"><h2>⛔ التسجيل متوقف</h2><div id="closedMsg" class="msg warn"></div></div>
@@ -195,7 +204,7 @@
     </section>
   </div>
 
-  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 3.8 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
+  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 3.9 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
   <div class="hint" id="srvInfo" style="text-align:center;padding-top:0;direction:ltr"></div>
 </main>
 
@@ -304,7 +313,7 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
   var API_URL = (window.API_URL || '').trim();
-  var NEED_SERVER = '3.8';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.8 = كتابة مفتاح الحضور في العمود M)
+  var NEED_SERVER = '3.9';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
   function urlTag() { var m = API_URL.match(/\/s\/([^\/]+)\/exec/); var id = m ? m[1] : API_URL; return id.length > 14 ? id.slice(0, 6) + '…' + id.slice(-8) : id; }
   function verLess(a, b) {
     var x = String(a || '0').split('.').map(Number), y = String(b || '0').split('.').map(Number);
@@ -488,6 +497,7 @@
       if (r.mine) { MINE = r.mine; saveMine(); }
       setCount(r.todayCount);
       renderHeader(); show($('block'), false);
+      if (r.dups) applyDups(r.dups, null);
       if (srvOld(r.ver)) setStatus('warn', 'الخادم بنسخة قديمة (' + (r.ver || 'غير محددة') + '). الصق Code.gs الجديد ثم Deploy ← Manage deployments ← Edit ← New version، وتأكد أن رابط /exec في config.js هو نفس رابط هذا النشر.' + srvNote());
       renderLog(); updateQueueChip(); processQueue();
     }).catch(function (e) {
@@ -497,6 +507,44 @@
         clearTimeout(S.initRetry); S.initRetry = setTimeout(function () { refreshInit(D.version, true); }, 10000);
       }
     });
+  }
+
+  /* ---------- شريط تنبيه التكرار ---------- */
+  function setBar(type, main, sub, closable) {
+    var b = $('dupBar'), t = $('dupTx');
+    b.className = 'dupbar ' + type;
+    t.innerHTML = '';
+    t.appendChild(document.createTextNode(main));
+    if (sub) { var s = document.createElement('small'); s.textContent = sub; t.appendChild(s); }
+    show($('dupX'), !!closable);
+    show(b, true);
+  }
+  function hideBar() { show($('dupBar'), false); }
+  $('dupX').addEventListener('click', hideBar);
+  function dupNames(items, extra) {
+    var n = (items || []).map(function (x) { return x.name || x.code; });
+    var s = n.slice(0, 5).join('، ');
+    return s + (extra > 5 ? ' ... وغيرهم' : '');
+  }
+  /** dups = {count, extra, window, items}; cleanup = {removed, skipped, busy, more} (الأدمن بعد الضغط على تحديث فقط) */
+  function applyDups(dups, cleanup) {
+    var left = dups && dups.count > 0;
+    var removed = cleanup && cleanup.removed ? cleanup.removed : [];
+    if (cleanup && cleanup.busy) toast('النظام مشغول، لم يتم حذف التكرار. اضغط تحديث مرة أخرى.', 'err');
+    if (!left && !removed.length) { hideBar(); return; }
+    if (S.isAdmin) {
+      var rn = removed.map(function (x) { return x.name || x.code; });
+      var delTxt = removed.length ? ('✔ تم حذف ' + removed.length + ' صف مكرر (' + rn.slice(0, 5).join('، ') + (rn.length > 5 ? ' ...' : '') + ') واحتُفظ بصف AppSheet.') : '';
+      if (left) {
+        setBar('warn', (delTxt ? delTxt + ' ⚠ ما زال يوجد تكرار لـ ' : '⚠ يوجد تكرار لـ ') + dups.count + ' طالب (' + dupNames(dups.items, dups.count) + '). ' + (delTxt ? 'اضغط «🔄 تحديث» لحذف الباقي.' : 'اضغط «🔄 تحديث» لحذف المكرر (يُحتفظ بصف AppSheet).'),
+          cleanup && cleanup.skipped ? ('تعذر حذف ' + cleanup.skipped + ' صف لأن محتواه تغيّر أثناء الحذف.') : (cleanup && cleanup.more ? ('بقي ' + cleanup.more + ' صف لم يُحذف في هذه المرة.') : 'يُفحص آخر ' + dups.window + ' سجل.'), true);
+      } else {
+        setBar('ok', delTxt, 'السجلات المحذوفة محفوظة في شيت «Attendance Removed» داخل ملف Google Sheet.', true);
+      }
+    } else {
+      setBar('warn', '⚠ تنبيه: يوجد تكرار في تسجيل الحضور لـ ' + dups.count + ' طالب: ' + dupNames(dups.items, dups.count) + '.',
+        'لا تُسجّل لهم مرة أخرى. سيُحذف التكرار عندما يضغط الأدمن على «🔄 تحديث».', false);
+    }
   }
 
   /* ---------- زر التحديث: قراءة آخر 300 سجل من شيت Attendance ---------- */
@@ -515,7 +563,8 @@
       ATT = {}; (r.attended || []).forEach(function (c) { ATT[c] = true; });
       MINE = r.mine || []; saveMine();
       setCount(r.todayCount); renderLog(); updateQueueChip();
-      toast('✔ تم التحديث من الشيت (آخر ' + r.limit + ' سجل) · سجلاتك اليوم: ' + MINE.length + ' · إجمالي حضور اليوم: ' + r.todayCount, 'ok');
+      applyDups(r.dups, r.cleanup || null);
+      toast('✔ تم التحديث من الشيت (آخر ' + r.limit + ' سجل) · سجلاتك اليوم: ' + MINE.length + ' · إجمالي حضور اليوم: ' + r.todayCount + (r.cleanup && r.cleanup.removed && r.cleanup.removed.length ? ' · حُذف ' + r.cleanup.removed.length + ' مكرر' : ''), 'ok');
       if (!$('reportView').classList.contains('hidden')) loadReport();
       processQueue();
     }).catch(function (e) { S.refreshing = false; chip.textContent = '🔄 تحديث'; toast(errText(e), 'err'); });
@@ -543,7 +592,7 @@
   $('logoutChip').addEventListener('click', function () {
     var pend = ITEMS.filter(function (i) { return i.state === 'pending' || i.state === 'sending'; }).length;
     if (pend && !confirm('يوجد ' + pend + ' تسجيل لم يُرفع بعد. هل تريد تغيير الحساب؟ (سيتم رفعها عند الدخول مرة أخرى)')) return;
-    stopScan(); clearAuth(); clearData(); MINE = []; renderLog(); resetCard();
+    stopScan(); clearAuth(); clearData(); MINE = []; renderLog(); resetCard(); hideBar();
     show($('reportView'), false); show($('adminView'), false); show($('mainView'), true);
     showLogin('');
   });
