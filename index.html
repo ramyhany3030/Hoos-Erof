@@ -142,9 +142,12 @@
   <section class="card" id="logCard">
     <div class="head">
       <h2>📋 سجل الحضور (آخر 300)</h2>
-      <button class="btn alt sm" id="refreshBtn">🔄 تحديث</button>
+      <div class="row" style="flex:none">
+        <button class="btn alt sm" id="refreshBtn">🔄 تحديث</button>
+        <button class="btn ghost sm hidden" id="cleanBtn">🧹 مسح التكرارات</button>
+      </div>
     </div>
-    <div class="log" id="log"><div class="hint" id="logHint">اضغط "تحديث" لعرض آخر 300 تسجيل وفحص التكرارات.</div></div>
+    <div class="log" id="log"><div class="hint" id="logHint">اضغط "تحديث" لعرض آخر 300 تسجيل.</div></div>
     <div id="dupMsg" class="msg ok hidden"></div>
   </section>
 </main>
@@ -154,7 +157,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var CODE_RE = /^MK\d{8}$/;
   var AUTH = { email: '', pin: '' };
-  var S = { students: [], index: [], current: null, scanning: false, busy: false, refreshing: false, lastBad: 0 };
+  var S = { students: [], index: [], current: null, scanning: false, busy: false, refreshing: false, isAdmin: false, lastBad: 0 };
   var qr = null;
 
   function run(fn) {
@@ -223,6 +226,8 @@
         return;
       }
       saveAuth();
+      S.isAdmin = !!r.isAdmin;
+      show($('cleanBtn'), S.isAdmin);
       S.students = r.students;
       S.index = r.students.map(function (x) { return norm(x[0] + ' ' + x[1]); });
       $('title').textContent = r.title;
@@ -243,6 +248,8 @@
   $('logoutChip').addEventListener('click', function () {
     stopScan();
     clearAuth();
+    S.isAdmin = false;
+    show($('cleanBtn'), false);
     resetAll();
     showLogin('');
   });
@@ -476,18 +483,43 @@
     show(m, true);
   }
 
+  function setLogButtons(disabled, label, which) {
+    var r = $('refreshBtn'), c = $('cleanBtn');
+    r.disabled = disabled; c.disabled = disabled;
+    r.textContent = (disabled && which === 'refresh') ? 'جاري التحديث...' : '🔄 تحديث';
+    c.textContent = (disabled && which === 'clean') ? 'جاري المسح...' : '🧹 مسح التكرارات';
+  }
+
+  /* زر التحديث: لكل المستخدمين - جلب آخر 300 فقط */
   $('refreshBtn').addEventListener('click', refreshLog);
   function refreshLog() {
     if (S.refreshing || S.busy) return;
     S.refreshing = true;
-    var b = $('refreshBtn');
-    b.disabled = true;
-    b.textContent = 'جاري التحديث...';
+    setLogButtons(true, '', 'refresh');
     show($('dupMsg'), false);
     run('refreshAttendance', AUTH).then(function (r) {
       S.refreshing = false;
-      b.disabled = false;
-      b.textContent = '🔄 تحديث';
+      setLogButtons(false);
+      if (!r || !r.ok) { setDupMsg('err', esc(r ? r.message : 'خطأ')); return; }
+      renderLog(r.rows);
+      $('countChip').textContent = r.todayCount;
+    }).catch(function (e) {
+      S.refreshing = false;
+      setLogButtons(false);
+      setDupMsg('err', esc(errText(e)));
+    });
+  }
+
+  /* زر مسح التكرارات: للأدمن فقط */
+  $('cleanBtn').addEventListener('click', cleanLog);
+  function cleanLog() {
+    if (!S.isAdmin || S.refreshing || S.busy) return;
+    S.refreshing = true;
+    setLogButtons(true, '', 'clean');
+    show($('dupMsg'), false);
+    run('cleanDuplicates', AUTH).then(function (r) {
+      S.refreshing = false;
+      setLogButtons(false);
       if (!r || !r.ok) { setDupMsg('err', esc(r ? r.message : 'خطأ')); return; }
       renderLog(r.rows);
       $('countChip').textContent = r.todayCount;
@@ -506,8 +538,7 @@
       }
     }).catch(function (e) {
       S.refreshing = false;
-      b.disabled = false;
-      b.textContent = '🔄 تحديث';
+      setLogButtons(false);
       setDupMsg('err', esc(errText(e)));
     });
   }
