@@ -119,14 +119,35 @@
 <div id="login" class="block hidden">
   <div class="box" style="width:100%">
     <h2>تسجيل الدخول</h2>
-    <p style="margin:0 0 12px;font-size:14px">اكتب بريد Gmail المسجل لدى المدرسة (مرة واحدة فقط)</p>
-    <input type="text" id="emailInput" class="ltr" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="example@gmail.com">
-    <input type="text" id="pinInput" class="ltr hidden" inputmode="numeric" autocomplete="off" placeholder="الرقم السري" style="margin-top:8px">
+    <p style="margin:0 0 12px;font-size:14px">اكتب بريد Gmail المسجل لدى المدرسة والرقم السري الخاص بك</p>
+    <input type="text" id="emailInput" class="ltr" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="example@gmail.com">
+    <div id="pinLoginBox">
+      <input type="password" id="pinInput" class="ltr" inputmode="numeric" autocomplete="current-password" placeholder="الرقم السري" style="margin-top:8px">
+      <div class="hint" style="padding:6px 2px 0">أول مرة تدخل؟ اكتب البريد فقط واضغط دخول، وهيطلب منك تنشئ رقمك السري.</div>
+    </div>
+    <div id="pinSetupBox" class="hidden">
+      <div class="msg ok" style="margin-top:10px;font-size:13px">🔐 أنشئ رقمك السري الخاص (4 إلى 12 رقم). لن يعرفه أحد غيرك، حتى الأدمن.</div>
+      <input type="password" id="newPin1" class="ltr" inputmode="numeric" autocomplete="new-password" placeholder="الرقم السري الجديد" style="margin-top:8px">
+      <input type="password" id="newPin2" class="ltr" inputmode="numeric" autocomplete="new-password" placeholder="تأكيد الرقم السري" style="margin-top:8px">
+    </div>
     <div id="loginErr" class="msg err hidden"></div>
     <button class="btn" id="loginBtn" style="margin-top:12px">دخول</button>
   </div>
 </div>
 
+<div id="pinModal" class="block hidden" style="background:rgba(43,34,36,.55)">
+  <div class="box" style="width:100%">
+    <h2>🔑 تغيير الرقم السري</h2>
+    <input type="password" id="cpOld" class="ltr" inputmode="numeric" autocomplete="current-password" placeholder="الرقم السري الحالي">
+    <input type="password" id="cpNew1" class="ltr" inputmode="numeric" autocomplete="new-password" placeholder="الرقم السري الجديد (4-12 رقم)" style="margin-top:8px">
+    <input type="password" id="cpNew2" class="ltr" inputmode="numeric" autocomplete="new-password" placeholder="تأكيد الرقم السري الجديد" style="margin-top:8px">
+    <div id="cpMsg" class="msg err hidden"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="cpSave" type="button">حفظ</button>
+      <button class="btn ghost" id="cpCancel" type="button" style="flex:.6">إلغاء</button>
+    </div>
+  </div>
+</div>
 <div id="toast" class="toast hidden"></div>
 
 <header>
@@ -140,6 +161,7 @@
     <span class="chip btnchip" id="refreshChip" style="background:#c9a24b;font-weight:700">🔄 تحديث</span>
     <span class="chip btnchip" id="reportChip" style="background:#c9a24b;font-weight:700">📊 التقرير</span>
     <span class="chip btnchip hidden" id="adminChip" style="background:#c9a24b;font-weight:700">⚙ الإعدادات</span>
+    <span class="chip btnchip" id="pinChip" style="background:rgba(255,255,255,.14)">🔑 الرقم السري</span>
     <span class="chip btnchip" id="logoutChip" style="background:rgba(255,255,255,.14)">تغيير الحساب ⎋</span>
   </div>
 </header>
@@ -204,7 +226,7 @@
     </section>
   </div>
 
-  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 4.0 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
+  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 4.1 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
   <div class="hint" id="srvInfo" style="text-align:center;padding-top:0;direction:ltr"></div>
 </main>
 
@@ -290,7 +312,7 @@
     <h2>المستخدمون المصرح لهم</h2>
     <div id="userRows"></div>
     <button class="btn alt" id="addUser">+ إضافة مستخدم</button>
-    <div class="hint">لحذف صف: امسح بياناته كلها ثم احفظ. يجب أن يبقى أدمن واحد نشط على الأقل. PIN اختياري.</div>
+    <div class="hint">لحذف صف: امسح بياناته كلها ثم احفظ. يجب أن يبقى أدمن واحد نشط على الأقل. كل مستخدم يُنشئ رقمه السري بنفسه أول دخول (مشفر ولا يظهر لأحد). لو نسيه: علّم «مسح» واحفظ، وهيُطلب منه إنشاء رقم جديد.</div>
   </section>
 
   <section class="card">
@@ -313,7 +335,7 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
   var API_URL = (window.API_URL || '').trim();
-  var NEED_SERVER = '4.0';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
+  var NEED_SERVER = '4.1';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
   function urlTag() { var m = API_URL.match(/\/s\/([^\/]+)\/exec/); var id = m ? m[1] : API_URL; return id.length > 14 ? id.slice(0, 6) + '…' + id.slice(-8) : id; }
   function verLess(a, b) {
     var x = String(a || '0').split('.').map(Number), y = String(b || '0').split('.').map(Number);
@@ -342,7 +364,7 @@
 
   /* ---------- helpers ---------- */
   function api(action, extra) {
-    var body = { action: action, auth: AUTH };
+    var body = { action: action, auth: { email: AUTH.email, pin: AUTH.pin } };
     for (var k in (extra || {})) body[k] = extra[k];
     var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
     var timer = ctl ? setTimeout(function () { ctl.abort(); }, 40000) : null;
@@ -373,7 +395,7 @@
     var t = $('toast'); t.className = 'toast ' + (type || ''); t.textContent = text;
     clearTimeout(S.toastT); S.toastT = setTimeout(function () { show(t, false); }, 4500);
   }
-  var AUTH_CODES = ['NOT_AUTHORIZED', 'BAD_EMAIL', 'PIN_REQUIRED', 'BAD_PIN'];
+  var AUTH_CODES = ['NOT_AUTHORIZED', 'BAD_EMAIL', 'PIN_REQUIRED', 'BAD_PIN', 'PIN_SETUP', 'PIN_LOCKED'];
 
   /* ---------- local data cache ---------- */
   function saveData() {
@@ -435,11 +457,22 @@
     AUTH = { email: '', pin: '' };
     try { localStorage.removeItem('att_email'); localStorage.removeItem('att_pin'); } catch (e) {}
   }
-  function showLogin(msg, needPin) {
+  var LOGIN_MODE = 'login';          // login | setup
+  /** code = كود الخطأ من الخادم (PIN_SETUP يفتح شاشة إنشاء الرقم السري). */
+  function showLogin(msg, code) {
     show($('block'), false); show($('login'), true);
+    LOGIN_MODE = (code === 'PIN_SETUP') ? 'setup' : 'login';
     $('emailInput').value = AUTH.email;
-    show($('pinInput'), !!needPin || !!AUTH.pin);
-    var e = $('loginErr'); e.textContent = msg || ''; show(e, !!msg);
+    $('pinInput').value = '';
+    $('newPin1').value = ''; $('newPin2').value = '';
+    show($('pinLoginBox'), LOGIN_MODE === 'login');
+    show($('pinSetupBox'), LOGIN_MODE === 'setup');
+    $('loginBtn').textContent = LOGIN_MODE === 'setup' ? '🔐 حفظ الرقم السري والدخول' : 'دخول';
+    $('loginBtn').disabled = false;
+    var e = $('loginErr');
+    e.className = 'msg ' + (code === 'PIN_SETUP' ? 'warn' : 'err');
+    e.textContent = msg || ''; show(e, !!msg);
+    setTimeout(function () { try { (LOGIN_MODE === 'setup' ? $('newPin1') : (AUTH.email ? $('pinInput') : $('emailInput'))).focus(); } catch (x) {} }, 50);
   }
   function renderHeader() {
     $('title').textContent = D.title || 'مدرسة هوس ايروف للشمامسة';
@@ -471,8 +504,9 @@
     return api('init', { version: version }).then(function (r) {
       if (!r || !r.ok) {
         if (r && AUTH_CODES.indexOf(r.code) > -1) {
-          if (r.code !== 'PIN_REQUIRED' && r.code !== 'BAD_PIN') AUTH.pin = '';
-          clearData(); showLogin(r.message, r.code === 'PIN_REQUIRED' || r.code === 'BAD_PIN');
+          AUTH.pin = '';
+          try { localStorage.removeItem('att_pin'); } catch (e) {}
+          clearData(); showLogin(r.message, r.code);
         } else if (!hasLocal) {
           blockScreen('تعذر الدخول', r && r.message);
         } else {
@@ -555,7 +589,7 @@
     api('refresh').then(function (r) {
       S.refreshing = false; chip.textContent = '🔄 تحديث';
       if (!r || !r.ok) {
-        if (r && AUTH_CODES.indexOf(r.code) > -1) { showLogin(r.message, r.code === 'PIN_REQUIRED' || r.code === 'BAD_PIN'); return; }
+        if (r && AUTH_CODES.indexOf(r.code) > -1) { showLogin(r.message, r.code); return; }
         if (r && r.code === 'BAD_ACTION') { toast('الخادم لا يدعم التحديث بعد (نسخته ' + (r.ver || 'قديمة') + '). الصق Code.gs الجديد وانشر New version.' + srvNote(), 'err'); return; }
         toast(r ? r.message : 'خطأ', 'err'); return;
       }
@@ -582,13 +616,60 @@
     Promise.all(jobs).catch(function () {}).then(function () { location.replace(location.pathname + '?r=' + Date.now()); });
   });
 
+  function loginErr(msg, type) { var e = $('loginErr'); e.className = 'msg ' + (type || 'err'); e.textContent = msg || ''; show(e, !!msg); }
+  function pinProblem(p1, p2) {
+    if (!/^\d{4,12}$/.test(p1)) return 'الرقم السري لازم يكون أرقام فقط من 4 إلى 12 رقم.';
+    if (p1 !== p2) return 'الرقمين غير متطابقين.';
+    return '';
+  }
   $('loginBtn').addEventListener('click', function () {
-    AUTH.email = $('emailInput').value.trim().toLowerCase();
+    var email = $('emailInput').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { loginErr('اكتب بريد Gmail صحيح.'); return; }
+    if (LOGIN_MODE === 'setup') {
+      var p1 = $('newPin1').value.trim(), p2 = $('newPin2').value.trim();
+      var bad = pinProblem(p1, p2); if (bad) { loginErr(bad); return; }
+      var b = $('loginBtn'); b.disabled = true; b.innerHTML = 'جاري الحفظ<span class="spin"></span>';
+      api('setPin', { email: email, newPin: p1 }).then(function (r) {
+        b.disabled = false; b.textContent = '🔐 حفظ الرقم السري والدخول';
+        if (!r || !r.ok) {
+          if (r && r.code === 'PIN_EXISTS') { AUTH.email = email; showLogin(r.message, 'BAD_PIN'); return; }
+          loginErr(r ? (r.code === 'BAD_ACTION' ? 'الخادم قديم: الصق Code.gs الجديد ثم Deploy ← New version.' : r.message) : 'خطأ'); return;
+        }
+        AUTH.email = email; AUTH.pin = p1; saveAuth();
+        toast('✔ تم إنشاء رقمك السري. احفظه جيدًا.', 'ok');
+        start();
+      }).catch(function (e) { b.disabled = false; b.textContent = '🔐 حفظ الرقم السري والدخول'; loginErr(errText(e)); });
+      return;
+    }
+    AUTH.email = email;
     AUTH.pin = $('pinInput').value.trim();
     start();
   });
-  $('emailInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('loginBtn').click(); });
-  $('pinInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('loginBtn').click(); });
+  ['emailInput', 'pinInput', 'newPin2'].forEach(function (id) {
+    $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') $('loginBtn').click(); });
+  });
+  $('emailInput').addEventListener('input', function () {      // تغيير البريد يرجّع لشاشة الدخول العادية
+    if (LOGIN_MODE === 'setup' && this.value.trim().toLowerCase() !== AUTH.email) { LOGIN_MODE = 'login'; show($('pinLoginBox'), true); show($('pinSetupBox'), false); $('loginBtn').textContent = 'دخول'; loginErr(''); }
+  });
+  /* ---------- تغيير الرقم السري ---------- */
+  function cpMsg(msg, type) { var m = $('cpMsg'); m.className = 'msg ' + (type || 'err'); m.textContent = msg || ''; show(m, !!msg); }
+  $('pinChip').addEventListener('click', function () {
+    $('cpOld').value = ''; $('cpNew1').value = ''; $('cpNew2').value = ''; cpMsg('');
+    show($('pinModal'), true); setTimeout(function () { $('cpOld').focus(); }, 50);
+  });
+  $('cpCancel').addEventListener('click', function () { show($('pinModal'), false); });
+  $('cpSave').addEventListener('click', function () {
+    var oldP = $('cpOld').value.trim(), p1 = $('cpNew1').value.trim(), p2 = $('cpNew2').value.trim();
+    if (!oldP) { cpMsg('اكتب الرقم السري الحالي.'); return; }
+    var bad = pinProblem(p1, p2); if (bad) { cpMsg(bad); return; }
+    var b = $('cpSave'); b.disabled = true; b.innerHTML = 'جاري الحفظ<span class="spin"></span>';
+    api('changePin', { auth: { email: AUTH.email, pin: oldP }, newPin: p1 }).then(function (r) {
+      b.disabled = false; b.textContent = 'حفظ';
+      if (!r || !r.ok) { cpMsg(r ? (r.code === 'BAD_ACTION' ? 'الخادم قديم: الصق Code.gs الجديد ثم Deploy ← New version.' : r.message) : 'خطأ'); return; }
+      AUTH.pin = p1; saveAuth();
+      show($('pinModal'), false); toast('✔ تم تغيير الرقم السري.', 'ok');
+    }).catch(function (e) { b.disabled = false; b.textContent = 'حفظ'; cpMsg(errText(e)); });
+  });
   $('logoutChip').addEventListener('click', function () {
     var pend = ITEMS.filter(function (i) { return i.state === 'pending' || i.state === 'sending'; }).length;
     if (pend && !confirm('يوجد ' + pend + ' تسجيل لم يُرفع بعد. هل تريد تغيير الحساب؟ (سيتم رفعها عند الدخول مرة أخرى)')) return;
@@ -713,7 +794,7 @@
     setStatus('warn', 'جاري التحقق من الكود...');
     api('preview', { code: code }).then(function (r) {
       if (!r || !r.ok) {
-        if (r && AUTH_CODES.indexOf(r.code) > -1) { showLogin(r.message, r.code === 'PIN_REQUIRED' || r.code === 'BAD_PIN'); return; }
+        if (r && AUTH_CODES.indexOf(r.code) > -1) { showLogin(r.message, r.code); return; }
         setStatus('err', esc(r ? r.message : 'خطأ')); beep(false); if (fromScan) flashMark('err'); return;
       }
       clearStatus();
@@ -846,7 +927,7 @@
         var code = r && r.code;
         if (code && AUTH_CODES.indexOf(code) > -1) {
           batch.forEach(function (i) { i.state = 'pending'; });
-          persistQueue(); updateQueueChip(); showLogin(r.message, code === 'PIN_REQUIRED' || code === 'BAD_PIN'); return;
+          persistQueue(); updateQueueChip(); showLogin(r.message, code); return;
         }
         if (code === 'BUSY' || code === 'ERROR') {
           batch.forEach(function (i) { i.state = 'pending'; });
@@ -960,7 +1041,7 @@
     api('report', { opts: opts }).then(function (r) {
       b.disabled = false;
       if (!r || !r.ok) {
-        if (r && AUTH_CODES.indexOf(r.code) > -1) { closeReport(); showLogin(r.message, r.code === 'PIN_REQUIRED' || r.code === 'BAD_PIN'); return; }
+        if (r && AUTH_CODES.indexOf(r.code) > -1) { closeReport(); showLogin(r.message, r.code); return; }
         repMsg('err', r ? (r.code === 'BAD_ACTION' ? ('الخادم لا يعرف طلب التقرير: النشر الذي يعمل عليه الرابط ' + urlTag() + ' نسخته ' + (r.ver || 'قديمة') + '. المطلوب ' + NEED_SERVER + ' أو أحدث.') : r.message) : 'خطأ'); return;
       }
       repMsg('', '');
@@ -1133,17 +1214,22 @@
     row.appendChild(two); $('setRows').appendChild(row);
   }
   function addUserRow(u) {
-    u = u || ['', '', true, '', 'User'];
+    u = u || ['', '', true, false, 'User'];
     var row = mk('div', { className: 'arow usr' });
     var em = mk('input', { type: 'text', value: u[0], placeholder: 'email@gmail.com' }); em.classList.add('e', 'ltr');
     var nm = mk('input', { type: 'text', value: u[1], placeholder: 'اسم المستخدم' }); nm.classList.add('n');
-    var pn = mk('input', { type: 'text', value: u[3], placeholder: 'اختياري' }); pn.classList.add('p', 'ltr');
+    var pn = mk('label', { className: 'chk' });
+    var pr = mk('input', { type: 'checkbox' }); pr.classList.add('p');
+    pn.style.paddingTop = '6px'; pn.style.fontSize = '13px';
+    pn.appendChild(document.createTextNode(u[3] === true ? '✔ مضبوط · ' : '— لم يُنشأ بعد · '));
+    pn.appendChild(pr); pn.appendChild(document.createTextNode(' مسح'));
+    if (u[3] !== true) { pr.disabled = true; }
     var rl = mk('select'); ['User', 'Admin'].forEach(function (o) { rl.appendChild(mk('option', { value: o, textContent: o === 'Admin' ? 'Admin (أدمن)' : 'User (مستخدم)' })); });
     rl.value = u[4] === 'Admin' ? 'Admin' : 'User'; rl.classList.add('r');
     var ac = mk('input', { type: 'checkbox', checked: !!u[2] }); ac.classList.add('a');
     var chk = mk('label', { className: 'chk' }); chk.appendChild(ac); chk.appendChild(document.createTextNode(' نشط'));
     row.appendChild(field('البريد', em));
-    var t1 = mk('div', { className: 'two' }); t1.appendChild(field('الاسم', nm)); t1.appendChild(field('PIN', pn));
+    var t1 = mk('div', { className: 'two' }); t1.appendChild(field('الاسم', nm)); t1.appendChild(field('الرقم السري (يُنشئه المستخدم)', pn));
     var t2 = mk('div', { className: 'two' }); t2.appendChild(field('الصلاحية', rl)); t2.appendChild(chk);
     row.appendChild(t1); row.appendChild(t2);
     $('userRows').appendChild(row);
@@ -1173,7 +1259,7 @@
       return [r.querySelector('.k').value.trim(), r.querySelector('.v').value];
     });
     var users = [].map.call(document.querySelectorAll('#userRows .usr'), function (r) {
-      return [r.querySelector('.e').value, r.querySelector('.n').value, r.querySelector('.a').checked, r.querySelector('.p').value, r.querySelector('.r').value];
+      return [r.querySelector('.e').value, r.querySelector('.n').value, r.querySelector('.a').checked, r.querySelector('.p').checked ? 'reset' : 'keep', r.querySelector('.r').value];
     });
     var b = $('adminSave'); b.disabled = true; b.innerHTML = 'جاري الحفظ<span class="spin"></span>';
     api('adminSave', { payload: { settings: settings, users: users } }).then(function (r) {
