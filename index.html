@@ -258,7 +258,7 @@
     </section>
   </div>
 
-  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 4.3 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
+  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 4.4 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
   <div class="hint" id="srvInfo" style="text-align:center;padding-top:0;direction:ltr"></div>
 </main>
 
@@ -379,7 +379,8 @@
     <h2>الإعدادات العامة</h2>
     <div class="hint" style="padding-top:0;line-height:1.8">
       <b>Auto Open</b>: ON = التسجيل يتقفل تلقائيًا لغير الأدمن خارج <b>Open Days</b> (مثل Wed,Thu,Fri) ومن <b>Open From</b> إلى <b>Open To</b> (مثل 16:00 و 23:00).<br>
-      <b>Late After</b>: وقت التأخير (مثل 19:15). ولكل يوم وقت مختلف أضف إعداد <b>Late After Wed</b> / <b>Late After Thu</b> / <b>Late After Fri</b>.<br>
+      <b>مواعيد التأخير لكل فصل</b>: من شيت <b>Late Times</b> في ملف Google Sheet (العمود C لكل موديول/فصل، مثل 19:15). بيتعمل تلقائيًا أول ما تفتح الصفحة دي.<br>
+      <b>Late After</b>: وقت احتياطي لأي مجموعة مالهاش وقت في Late Times (أو لكل يوم: <b>Late After Wed</b> / <b>Thu</b> / <b>Fri</b>).<br>
       <b>Semester Start</b>: بداية الفصل لحساب النسب (مثل 2026-10-01). لو فاضي يُحسب من أول يوم حضور.
     </div>
     <div id="setRows"></div>
@@ -413,7 +414,7 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
   var API_URL = (window.API_URL || '').trim();
-  var NEED_SERVER = '4.3';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
+  var NEED_SERVER = '4.4';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
   function urlTag() { var m = API_URL.match(/\/s\/([^\/]+)\/exec/); var id = m ? m[1] : API_URL; return id.length > 14 ? id.slice(0, 6) + '…' + id.slice(-8) : id; }
   function verLess(a, b) {
     var x = String(a || '0').split('.').map(Number), y = String(b || '0').split('.').map(Number);
