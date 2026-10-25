@@ -204,7 +204,7 @@
     </section>
   </div>
 
-  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 3.9 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
+  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 4.0 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
   <div class="hint" id="srvInfo" style="text-align:center;padding-top:0;direction:ltr"></div>
 </main>
 
@@ -313,7 +313,7 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
   var API_URL = (window.API_URL || '').trim();
-  var NEED_SERVER = '3.9';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
+  var NEED_SERVER = '4.0';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
   function urlTag() { var m = API_URL.match(/\/s\/([^\/]+)\/exec/); var id = m ? m[1] : API_URL; return id.length > 14 ? id.slice(0, 6) + '…' + id.slice(-8) : id; }
   function verLess(a, b) {
     var x = String(a || '0').split('.').map(Number), y = String(b || '0').split('.').map(Number);
@@ -1005,7 +1005,8 @@
     // الموديولات بعد التصفية (مع إعادة حساب أعداد الموديول عند تصفية الفصل)
     var mods = r.modules.filter(function (m) { return !fm || m.name === fm; }).map(function (m) {
       var cls = m.classes.filter(function (c) { return !fc || c.name === fc; });
-      return { name: m.name, classes: cls, attended: fc ? sumOf(cls, 'attended') : m.attended, enrolled: fc ? sumOf(cls, 'enrolled') : m.enrolled };
+      return { name: m.name, classes: cls, attended: fc ? sumOf(cls, 'attended') : m.attended, enrolled: fc ? sumOf(cls, 'enrolled') : m.enrolled,
+        records: sumOf(cls, 'records'), expected: sumOf(cls, 'expected') };
     }).filter(function (m) { return m.classes.length; });
 
     var totAtt = r.totalAttended, totEnr = r.enrolledTotal, totRec = r.totalRecords;
@@ -1013,12 +1014,13 @@
       totAtt = sumOf(mods, 'attended'); totEnr = sumOf(mods, 'enrolled');
       totRec = mods.reduce(function (n, m) { return n + sumOf(m.classes, 'records'); }, 0);
     }
-    $('sumLbl1').textContent = multi ? 'طلاب حضروا' : 'حضروا';
-    $('sumAtt').textContent = totAtt;
-    $('sumEnr').textContent = totEnr;
-    $('sumLbl3').textContent = multi ? 'عدد الأيام' : 'النسبة';
-    $('sumPct').textContent = multi ? r.daysCount : (pct(totAtt, totEnr) + '%');
-    $('sumNote').textContent = multi ? ('إجمالي مرات الحضور: ' + totRec + ' (طالب × يوم)') : '';
+    var totExpected = filtered ? mods.reduce(function (n, m) { return n + m.expected; }, 0) : (r.expectedTotal || 0);
+    $('sumLbl1').textContent = multi ? 'مرات الحضور' : 'حضروا';
+    $('sumAtt').textContent = multi ? totRec : totAtt;
+    $('sumEnr').textContent = multi ? totExpected : totEnr;
+    $('sumLbl3').textContent = 'النسبة';
+    $('sumPct').textContent = pct(multi ? totRec : totAtt, multi ? totExpected : totEnr) + '%';
+    $('sumNote').textContent = multi ? ('النسبة محسوبة من مرات الحضور الفعلية ÷ الحضور المتوقع حسب جدول الأربعاء والخميس والجمعة · أيام الدراسة في الفترة: ' + r.daysCount) : 'النسبة محسوبة فقط على المجموعات المقرر حضورها في هذا اليوم.';
     show($('repSummary'), true);
     $('repNames').textContent = REPNAMES ? '👥 إخفاء الأسماء' : '👥 إظهار كل الأسماء';
 
@@ -1028,9 +1030,11 @@
       var card = el('div', 'mod');
       var head = el('div', 'mh');
       head.appendChild(el('span', '', 'الموديول: ' + m.name));
-      head.appendChild(el('span', 'num', m.attended + ' / ' + m.enrolled + (multi ? '' : '  (' + pct(m.attended, m.enrolled) + '%)')));
+      head.appendChild(el('span', 'num', multi
+        ? (m.records + ' / ' + m.expected + '  (' + pct(m.records, m.expected) + '%)')
+        : (m.attended + ' / ' + m.enrolled + '  (' + pct(m.attended, m.enrolled) + '%)')));
       card.appendChild(head);
-      var meter = el('div', 'meter'); var fill = el('i'); fill.style.width = Math.min(100, pct(m.attended, m.enrolled)) + '%'; meter.appendChild(fill);
+      var meter = el('div', 'meter'); var fill = el('i'); fill.style.width = Math.min(100, pct(multi ? m.records : m.attended, multi ? m.expected : m.enrolled)) + '%'; meter.appendChild(fill);
       card.appendChild(meter);
       m.classes.forEach(function (c) {
         var wrap = el('div', 'clsw');
@@ -1041,7 +1045,9 @@
         left.appendChild(document.createTextNode('الفصل: ' + c.name));
         if (multi) { left.appendChild(document.createTextNode(' ')); left.appendChild(el('small', '', '(مرات الحضور ' + c.records + ')')); }
         row.appendChild(left);
-        row.appendChild(el('span', 'num', c.attended + ' / ' + c.enrolled));
+        row.appendChild(el('span', 'num', multi
+          ? (c.records + ' / ' + c.expected + ' (' + pct(c.records, c.expected) + '%)')
+          : (c.attended + ' / ' + c.enrolled + ' (' + pct(c.attended, c.enrolled) + '%)')));
         var names = el('div', 'names' + (open ? '' : ' hidden'));
         if (!c.people.length) names.appendChild(el('div', 'hint', 'لا يوجد حضور'));
         c.people.forEach(function (p) {
