@@ -1,7 +1,7 @@
 /* يخزّن الصفحة ومكتبة الكاميرا ليفتح النظام حتى لو النت مقطوع (بعد أول فتح بالإنترنت).
  * v3.7+: كل طلب للصفحة يُراجَع مع الخادم (no-cache) بدل الاعتماد على كاش المتصفح (GitHub Pages يخزّن الملفات 10 دقائق)،
  * فلا تبقى نسخة قديمة من index.html أو config.js على الكمبيوتر. ولو الشبكة بطيئة/مقطوعة تُعرض النسخة المحفوظة. */
-var CACHE = 'att-shell-v4-1';
+var CACHE = 'att-shell-v4-0';
 var CDN = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
 var SHELL = ['./', './index.html', './config.js'];
 
