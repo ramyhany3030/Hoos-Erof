@@ -36,7 +36,7 @@
   .scanmark svg{width:62px;height:62px}
   .scanmark.show{animation:pop 1.1s ease forwards}
   @keyframes pop{0%{opacity:0;transform:scale(.4)}15%{opacity:1;transform:scale(1.12)}30%{transform:scale(1)}78%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
-  input[type=text],input[type=date],textarea,select{width:100%;font-family:inherit;font-size:16px;padding:11px;border:1px solid #d9cfcf;border-radius:12px;background:#fff;color:var(--ink)}
+  input[type=text],input[type=date],input[type=number],input[type=password],textarea,select{width:100%;font-family:inherit;font-size:16px;padding:11px;border:1px solid #d9cfcf;border-radius:12px;background:#fff;color:var(--ink)}
   textarea{resize:none;height:64px}
   input:focus,textarea:focus,select:focus{outline:2px solid var(--gold);border-color:var(--gold)}
   #results{margin-top:8px;max-height:260px;overflow:auto;border-radius:12px}
@@ -110,6 +110,23 @@
   .names .nm .t{color:var(--muted);white-space:nowrap}
   .dayrow{cursor:pointer}
   .dayrow:active{background:var(--gold-l)}
+  /* v4.3 */
+  .undo{background:var(--gold-l);color:var(--maroon);border:1px solid var(--gold);border-radius:99px;padding:2px 10px;font-size:12px;margin-inline-start:6px;cursor:pointer}
+  .offwarn{background:#fff3d6;color:var(--warn);border-radius:10px;padding:8px 10px;font-size:13px;font-weight:600;margin:8px 0 0;line-height:1.7}
+  .ch2{cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+  .tag{display:inline-block;font-size:11px;border-radius:99px;padding:1px 8px;margin-inline-start:4px;background:#f1ecec;color:var(--muted)}
+  .tag.late{background:#fff3d6;color:var(--warn)}
+  .tag.off{background:#fde8e7;color:var(--err)}
+  .mini{background:#f1ecec;color:var(--ink);border-radius:8px;padding:3px 9px;font-size:12px;cursor:pointer;border:0}
+  .mini.red{background:#fde8e7;color:var(--err)}
+  .mini.green{background:#e3f4ea;color:var(--ok)}
+  .lst{max-height:460px;overflow:auto}
+  .lst .it{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px dashed #e8dede;font-size:13px}
+  .lst .it:last-child{border-bottom:0}
+  .lst .it .nm{cursor:pointer;color:var(--maroon);font-weight:600}
+  .lst .it small{color:var(--muted)}
+  .grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}
+  @media (max-width:420px){.grid5{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
 <body>
@@ -160,6 +177,7 @@
     <span class="chip ltr" id="userChip">-</span>
     <span class="chip btnchip" id="refreshChip" style="background:#c9a24b;font-weight:700">🔄 تحديث</span>
     <span class="chip btnchip" id="reportChip" style="background:#c9a24b;font-weight:700">📊 التقرير</span>
+    <span class="chip btnchip hidden" id="followChip" style="background:#c9a24b;font-weight:700">📈 المتابعة</span>
     <span class="chip btnchip hidden" id="adminChip" style="background:#c9a24b;font-weight:700">⚙ الإعدادات</span>
     <span class="chip btnchip" id="pinChip" style="background:rgba(255,255,255,.14)">🔑 الرقم السري</span>
     <span class="chip btnchip" id="logoutChip" style="background:rgba(255,255,255,.14)">تغيير الحساب ⎋</span>
@@ -185,6 +203,7 @@
       </div>
       <input type="file" id="photoInput" accept="image/*" capture="environment" class="hidden">
       <label class="toggle"><input type="checkbox" id="autoSave" checked> تسجيل فوري بعد المسح (الكاميرا تظل شغالة للطالب التالي)</label>
+      <label class="toggle" style="margin-top:4px"><input type="checkbox" id="soundOn" checked> 🔊 صوت تأكيد عند المسح</label>
       <div id="camMsg" class="msg err hidden"></div>
     </section>
 
@@ -202,6 +221,7 @@
           <span class="code" id="pvCode"></span><br>
           <span class="badge pending" id="pvBadge"></span>
           <div class="hint hidden" id="imgWhy" style="padding:4px 0 0"></div>
+          <div class="offwarn hidden" id="offWarn"></div>
         </div>
       </div>
       <div class="grid">
@@ -220,13 +240,25 @@
 
     <div id="status" class="msg hidden"></div>
 
+    <section class="card hidden" id="missCard">
+      <h2 class="ch2" id="missHead"><span>🕒 لسه ماحضروش النهارده (<b id="missCount">0</b>)</span><span id="missArrow">▸</span></h2>
+      <div id="missBody" class="hidden">
+        <div class="row">
+          <select id="missMod"><option value="">كل الموديولات</option></select>
+          <select id="missCls"><option value="">كل الفصول</option></select>
+        </div>
+        <input type="text" id="missSearch" placeholder="بحث بالاسم أو الكود" autocomplete="off" style="margin-top:8px">
+        <div class="lst" id="missList" style="margin-top:6px"></div>
+        <div class="hint" style="padding-bottom:0">المجموعات المقرر حضورها النهارده فقط. اضغط على الاسم لتسجيل حضوره.</div>
+      </div>
+    </section>
     <section class="card hidden" id="logCard">
       <h2>سجلات اليوم من حسابك (<b id="mineCount">0</b>)</h2>
       <div class="log" id="log"></div>
     </section>
   </div>
 
-  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 4.2 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
+  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 4.3 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
   <div class="hint" id="srvInfo" style="text-align:center;padding-top:0;direction:ltr"></div>
 </main>
 
@@ -292,6 +324,47 @@
   </section>
 </main>
 
+<!-- ================= صفحة المتابعة (أدمن) ================= -->
+<main id="followView" class="hidden">
+  <section class="card">
+    <div class="row" style="align-items:center">
+      <h2 style="margin:0">📈 المتابعة</h2>
+      <button class="btn ghost" id="fwBack" type="button" style="flex:.4">رجوع ←</button>
+    </div>
+    <div class="hint" id="fwSub" style="padding-bottom:0"></div>
+  </section>
+  <section class="card">
+    <h2>👤 ملف طالب</h2>
+    <input type="text" id="pfSearch" placeholder="اكتب الكود أو الاسم" autocomplete="off">
+    <div id="pfResults" class="lst"></div>
+    <div id="pfMsg" class="msg hidden"></div>
+    <div id="pfBox"></div>
+  </section>
+  <section class="card">
+    <h2>🚨 تنبيهات الغياب</h2>
+    <div class="row">
+      <div><div class="hint" style="padding:0 0 2px">نسبة حضور أقل من %</div><input type="number" id="abPct" min="1" max="100" value="75" class="ltr"></div>
+      <div><div class="hint" style="padding:0 0 2px">أو غياب متتالي ≥</div><input type="number" id="abCon" min="1" max="20" value="2" class="ltr"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn" id="abGo" type="button">عرض</button>
+      <button class="btn alt hidden" id="abExport" type="button">⬇ Excel</button>
+    </div>
+    <div id="abMsg" class="msg hidden"></div>
+    <div id="abBox" class="lst"></div>
+  </section>
+  <section class="card">
+    <h2>🧑‍🏫 إحصائية الخدام</h2>
+    <div class="row">
+      <div><div class="hint" style="padding:0 0 2px">من (اختياري)</div><input type="date" id="usFrom" class="ltr"></div>
+      <div><div class="hint" style="padding:0 0 2px">إلى (اختياري)</div><input type="date" id="usTo" class="ltr"></div>
+    </div>
+    <button class="btn" id="usGo" type="button" style="margin-top:8px">عرض</button>
+    <div id="usMsg" class="msg hidden"></div>
+    <div id="usBox" class="lst"></div>
+  </section>
+</main>
+
 <!-- ================= صفحة الأدمن ================= -->
 <main id="adminView" class="hidden">
   <section class="card">
@@ -304,6 +377,11 @@
 
   <section class="card">
     <h2>الإعدادات العامة</h2>
+    <div class="hint" style="padding-top:0;line-height:1.8">
+      <b>Auto Open</b>: ON = التسجيل يتقفل تلقائيًا لغير الأدمن خارج <b>Open Days</b> (مثل Wed,Thu,Fri) ومن <b>Open From</b> إلى <b>Open To</b> (مثل 16:00 و 23:00).<br>
+      <b>Late After</b>: وقت التأخير (مثل 19:15). ولكل يوم وقت مختلف أضف إعداد <b>Late After Wed</b> / <b>Late After Thu</b> / <b>Late After Fri</b>.<br>
+      <b>Semester Start</b>: بداية الفصل لحساب النسب (مثل 2026-10-01). لو فاضي يُحسب من أول يوم حضور.
+    </div>
     <div id="setRows"></div>
     <button class="btn alt" id="addSet">+ إضافة إعداد</button>
   </section>
@@ -335,7 +413,7 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
   var API_URL = (window.API_URL || '').trim();
-  var NEED_SERVER = '4.2';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
+  var NEED_SERVER = '4.3';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
   function urlTag() { var m = API_URL.match(/\/s\/([^\/]+)\/exec/); var id = m ? m[1] : API_URL; return id.length > 14 ? id.slice(0, 6) + '…' + id.slice(-8) : id; }
   function verLess(a, b) {
     var x = String(a || '0').split('.').map(Number), y = String(b || '0').split('.').map(Number);
@@ -385,7 +463,24 @@
   }
   function show(el, on) { el.classList.toggle('hidden', !on); }
   function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; }
-  function beep(ok) { try { if (navigator.vibrate) navigator.vibrate(ok ? 90 : [70, 50, 70]); } catch (e) {} }
+  var AC = null;
+  function tone(ok) {
+    try {
+      if (!$('soundOn') || !$('soundOn').checked) return;
+      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      if (AC.state === 'suspended') AC.resume();
+      var t0 = AC.currentTime;
+      (ok ? [[880, 0], [1320, 0.09]] : [[260, 0], [200, 0.16]]).forEach(function (n) {
+        var o = AC.createOscillator(), g = AC.createGain();
+        o.type = ok ? 'sine' : 'square'; o.frequency.value = n[0];
+        g.gain.setValueAtTime(0.0001, t0 + n[1]);
+        g.gain.exponentialRampToValueAtTime(ok ? 0.25 : 0.12, t0 + n[1] + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + n[1] + 0.14);
+        o.connect(g); g.connect(AC.destination); o.start(t0 + n[1]); o.stop(t0 + n[1] + 0.16);
+      });
+    } catch (e) {}
+  }
+  function beep(ok) { tone(ok); try { if (navigator.vibrate) navigator.vibrate(ok ? 90 : [70, 50, 70]); } catch (e) {} }
   function setStatus(type, html) {
     var s = $('status'); s.className = 'msg ' + type; s.innerHTML = html; show(s, true);
   }
@@ -423,12 +518,12 @@
       if (c && c.email === AUTH.email && c.day === dayKey() && c.mine) MINE = c.mine;
     } catch (e) {}
   }
-  function addMine(code, name, time) {
+  function addMine(code, name, time, late) {
     var t = (time && time !== 'تم') ? time : '';
     for (var i = 0; i < MINE.length; i++) {
-      if (MINE[i][0] === code) { if (t && !MINE[i][2]) MINE[i][2] = t; saveMine(); return; }
+      if (MINE[i][0] === code) { if (t && !MINE[i][2]) MINE[i][2] = t; if (late) MINE[i][3] = 1; saveMine(); return; }
     }
-    MINE.push([code, name || code, t]);
+    MINE.push([code, name || code, t, late ? 1 : 0]);
     saveMine();
   }
 
@@ -458,7 +553,6 @@
     try { localStorage.removeItem('att_email'); localStorage.removeItem('att_pin'); } catch (e) {}
   }
   var LOGIN_MODE = 'login';          // login | setup
-  /** code = كود الخطأ من الخادم (PIN_SETUP يفتح شاشة إنشاء الرقم السري). */
   function showLogin(msg, code) {
     show($('block'), false); show($('login'), true);
     LOGIN_MODE = (code === 'PIN_SETUP') ? 'setup' : 'login';
@@ -479,6 +573,7 @@
     $('semChip').textContent = D.semName || D.semester || '-';
     $('userChip').textContent = AUTH.email + (S.roleKnown ? (S.isAdmin ? ' · أدمن' : ' · مستخدم') : '');
     show($('adminChip'), S.isAdmin);
+    show($('followChip'), S.isAdmin);
   }
   function setCount(n) { $('countChip').textContent = n; }
   function updateQueueChip() {
@@ -532,6 +627,7 @@
       setCount(r.todayCount);
       renderHeader(); show($('block'), false);
       if (r.dups) applyDups(r.dups, null);
+      if (r.autoNote) setStatus('warn', esc(r.autoNote));
       if (srvOld(r.ver)) setStatus('warn', 'الخادم بنسخة قديمة (' + (r.ver || 'غير محددة') + '). الصق Code.gs الجديد ثم Deploy ← Manage deployments ← Edit ← New version، وتأكد أن رابط /exec في config.js هو نفس رابط هذا النشر.' + srvNote());
       renderLog(); updateQueueChip(); processQueue();
     }).catch(function (e) {
@@ -648,7 +744,7 @@
   ['emailInput', 'pinInput', 'newPin2'].forEach(function (id) {
     $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') $('loginBtn').click(); });
   });
-  $('emailInput').addEventListener('input', function () {      // تغيير البريد يرجّع لشاشة الدخول العادية
+  $('emailInput').addEventListener('input', function () {
     if (LOGIN_MODE === 'setup' && this.value.trim().toLowerCase() !== AUTH.email) { LOGIN_MODE = 'login'; show($('pinLoginBox'), true); show($('pinSetupBox'), false); $('loginBtn').textContent = 'دخول'; loginErr(''); }
   });
   /* ---------- تغيير الرقم السري ---------- */
@@ -674,7 +770,7 @@
     var pend = ITEMS.filter(function (i) { return i.state === 'pending' || i.state === 'sending'; }).length;
     if (pend && !confirm('يوجد ' + pend + ' تسجيل لم يُرفع بعد. هل تريد تغيير الحساب؟ (سيتم رفعها عند الدخول مرة أخرى)')) return;
     stopScan(); clearAuth(); clearData(); MINE = []; renderLog(); resetCard(); hideBar();
-    show($('reportView'), false); show($('adminView'), false); show($('mainView'), true);
+    show($('reportView'), false); show($('adminView'), false); show($('followView'), false); show($('mainView'), true);
     showLogin('');
   });
   $('autoSave').checked = (function () { try { return localStorage.getItem('autoSave') !== '0'; } catch (e) { return true; } })();
@@ -816,6 +912,10 @@
     if (ATT[code] || isPending(code)) {
       showCard(s, 'dup'); beep(false); if (fromScan) flashMark('err'); return;
     }
+    if (!schedToday(s)) {                       // ليس يوم مجموعته: تأكيد إجباري حتى مع التسجيل الفوري
+      if (fromScan) { pauseScan(); flashMark('err'); }
+      beep(false); showCard(s, 'confirm'); showOff(s); return;
+    }
     if (fromScan && $('autoSave').checked) {
       enqueue(s, ''); showCard(s, 'pending'); beep(true); flashMark('ok'); return;
     }
@@ -829,7 +929,7 @@
     $('pvSem').textContent = D.semName || D.semester; $('pvMod').textContent = s[3]; $('pvCls').textContent = s[4];
     var a = $('avatar'); a.innerHTML = '';
     a.textContent = (s[1] || '?').charAt(0);
-    show($('imgWhy'), false);
+    show($('imgWhy'), false); show($('offWarn'), false); S.off = false;
     loadAvatar(s);
     show($('confirmBox'), mode === 'confirm');
     if (mode === 'confirm') { $('notes').value = ''; $('saveBtn').disabled = false; setBadge('pending', 'بانتظار التأكيد'); }
@@ -900,7 +1000,7 @@
     if (!S.current) return;
     var s = S.current;
     $('saveBtn').disabled = true;
-    enqueue(s, $('notes').value);
+    enqueue(s, (S.off ? '(خارج الجدول) ' : '') + $('notes').value);
     if (S.scanning) flashMark('ok');
     show($('confirmBox'), false); setBadge('pending', '⏳ جاري الحفظ...');
     $('search').value = ''; $('results').innerHTML = '';
@@ -938,12 +1038,12 @@
       } else {
         r.results.forEach(function (res, idx) {
           var it = batch[idx]; if (!it) return;
-          if (res.ok) { it.state = 'ok'; it.time = res.time; ATT[it.code] = true; }
+          if (res.ok) { it.state = 'ok'; it.time = res.time; it.late = !!res.late; ATT[it.code] = true; if (!res.replay) UNDO[it.code] = Date.now(); }
           else if (res.err === 'DUPLICATE' && it.maybeSent) { it.state = 'ok'; it.time = 'تم'; ATT[it.code] = true; }   // الرد ضاع سابقًا لكن التسجيل تم
           else if (res.err === 'DUPLICATE') { it.state = 'dup'; ATT[it.code] = true; }
           else { it.state = 'err'; it.msg = res.message; }
         });
-        batch.forEach(function (it) { if (it.state === 'ok') addMine(it.code, it.name, it.time); });
+        batch.forEach(function (it) { if (it.state === 'ok') addMine(it.code, it.name, it.time, it.late); });
         if (typeof r.todayCount === 'number') setCount(r.todayCount);
       }
       persistQueue(); renderLog(); updateQueueChip(); refreshCardBadge();
@@ -963,7 +1063,8 @@
     for (var i = ITEMS.length - 1; i >= 0; i--) {
       var it = ITEMS[i];
       if (it.code !== S.cardCode) continue;
-      if (it.state === 'ok') setBadge('ok', '✔ تم تسجيل الحضور ' + (it.time && it.time !== 'تم' ? it.time : ''));
+      if (it.state === 'ok') setBadge(it.late ? 'pending' : 'ok', '✔ تم تسجيل الحضور ' + (it.time && it.time !== 'تم' ? it.time : '') + (it.late ? ' · ⏰ متأخر' : ''));
+      else if (it.state === 'undone') setBadge('err', '↩ تم إلغاء التسجيل');
       else if (it.state === 'dup') setBadge('err', 'تم تسجيل حضوره مسبقًا اليوم');
       else if (it.state === 'err') setBadge('err', '✖ ' + (it.msg || 'فشل التسجيل'));
       else setBadge('pending', '⏳ جاري الحفظ...');
@@ -983,16 +1084,27 @@
     bad.forEach(function (it) {
       rows.push(['✖', '#b3261e', it.name || it.code, it.state === 'dup' ? 'مسجل سابقًا' : (it.msg || 'فشل')]);
     });
-    for (var j = MINE.length - 1; j >= 0; j--) rows.push(['✔', '#1e7b46', MINE[j][1], MINE[j][2] || '']);
+    for (var j = MINE.length - 1; j >= 0; j--) rows.push(['✔', '#1e7b46', MINE[j][1], (MINE[j][2] || '') + (MINE[j][3] ? ' ⏰' : ''), MINE[j][0]]);
     var frag = document.createDocumentFragment();
+    var anyUndo = false;
     rows.forEach(function (r) {
       var d = document.createElement('div');
       d.innerHTML = '<span><b style="color:' + r[1] + '">' + r[0] + '</b> ' + esc(r[2]) + '</span><span class="t">' + esc(r[3]) + '</span>';
+      if (r[4] && canUndo(r[4])) {
+        anyUndo = true;
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'undo'; b.textContent = '↩ تراجع';
+        b.setAttribute('data-code', r[4]);
+        b.addEventListener('click', function () { doUndo(this.getAttribute('data-code'), this); });
+        d.lastChild.appendChild(b);
+      }
       frag.appendChild(d);
     });
     l.appendChild(frag);
     $('mineCount').textContent = MINE.length;
     show($('logCard'), rows.length > 0);
+    clearTimeout(S.undoT);
+    if (anyUndo) S.undoT = setTimeout(renderLog, 10000);       // يختفي زر التراجع بعد دقيقتين
+    renderMissing();
   }
 
   /* ================= Report (أعداد وأسماء الحاضرين لكل موديول وفصل) ================= */
@@ -1013,7 +1125,7 @@
 
   function openReport() {
     stopScan();
-    show($('mainView'), false); show($('adminView'), false); show($('reportView'), true);
+    show($('mainView'), false); show($('adminView'), false); show($('followView'), false); show($('reportView'), true);
     show($('repFilter'), S.isAdmin);
     $('repMode').value = 'today'; syncRepMode();
     loadReport();
@@ -1102,6 +1214,7 @@
     $('sumLbl3').textContent = 'النسبة';
     $('sumPct').textContent = pct(multi ? totRec : totAtt, multi ? totExpected : totEnr) + '%';
     $('sumNote').textContent = multi ? ('النسبة محسوبة من مرات الحضور الفعلية ÷ الحضور المتوقع حسب جدول الأربعاء والخميس والجمعة · أيام الدراسة في الفترة: ' + r.daysCount) : 'النسبة محسوبة فقط على المجموعات المقرر حضورها في هذا اليوم.';
+    if (r.totalLate && !filtered) $('sumNote').textContent += ' · ⏰ متأخرين: ' + r.totalLate;
     show($('repSummary'), true);
     $('repNames').textContent = REPNAMES ? '👥 إخفاء الأسماء' : '👥 إظهار كل الأسماء';
 
@@ -1125,6 +1238,7 @@
         var arrow = el('span', 'arrow', open ? '▾' : '▸'); left.appendChild(arrow);
         left.appendChild(document.createTextNode('الفصل: ' + c.name));
         if (multi) { left.appendChild(document.createTextNode(' ')); left.appendChild(el('small', '', '(مرات الحضور ' + c.records + ')')); }
+        if (c.late) { left.appendChild(document.createTextNode(' ')); left.appendChild(el('span', 'tag late', '⏰ ' + c.late)); }
         row.appendChild(left);
         row.appendChild(el('span', 'num', multi
           ? (c.records + ' / ' + c.expected + ' (' + pct(c.records, c.expected) + '%)')
@@ -1135,7 +1249,7 @@
           var line = el('div', 'nm');
           var nm = el('span', '', p[1]); nm.appendChild(el('small', '', p[0]));
           line.appendChild(nm);
-          line.appendChild(el('span', 't', typeof p[2] === 'number' ? (p[2] + ' يوم') : (p[2] || '')));
+          line.appendChild(el('span', 't', (typeof p[2] === 'number' ? (p[2] + ' يوم') : (p[2] || '')) + (p[3] ? (typeof p[2] === 'number' ? ' · ⏰' + p[3] : ' ⏰') : '')));
           names.appendChild(line);
         });
         row.addEventListener('click', function () { var hid = names.classList.toggle('hidden'); arrow.textContent = hid ? '▸' : '▾'; });
@@ -1178,11 +1292,30 @@
       b.disabled = false; b.textContent = '⬇ تصدير التقرير (Excel)';
       if (!r || !r.ok) { repMsg('err', r ? r.message : 'خطأ'); return; }
       var rows = r.rows.filter(function (x) { return (!fm || x[4] === fm) && (!fc || x[5] === fc); });
-      if (!rows.length) { repMsg('warn', 'لا توجد بيانات لتصديرها بهذه الفترة/التصفية.'); return; }
-      var head = ['Date', 'Time', 'Code', 'Name', 'Module', 'Class', 'User', 'Source'];
-      var name = 'attendance_sem' + r.semester + '_' + (r.mode === 'all' ? 'all' : (r.from + (r.to && r.to !== r.from ? '_to_' + r.to : ''))) + (fm ? '_' + fm : '') + (fc ? '_' + fc : '') + '.csv';
-      downloadCsv(name.replace(/[^\w.\-]+/g, '_'), [head].concat(rows));
-      repMsg('ok', 'تم تنزيل الملف (' + rows.length + ' صف)' + (r.truncated ? ' — تم الاقتصار على أول 30000 صف.' : '') + '.');
+      var stats = (r.stats || []).filter(function (x) { return (!fm || x[2] === fm) && (!fc || x[3] === fc); });
+      if (!rows.length && !stats.length) { repMsg('warn', 'لا توجد بيانات لتصديرها بهذه الفترة/التصفية.'); return; }
+      var multi = (REP.mode === 'range' || REP.mode === 'all');
+      var sum = [['الموديول', 'الفصل', 'المسجلون', multi ? 'مرات الحضور' : 'الحاضرون', multi ? 'المتوقع' : 'المسجلون في اليوم', 'النسبة %', 'متأخرين']];
+      REP.modules.forEach(function (m) {
+        if (fm && m.name !== fm) return;
+        m.classes.forEach(function (c) {
+          if (fc && c.name !== fc) return;
+          var a = multi ? c.records : c.attended, b = multi ? c.expected : c.enrolled;
+          sum.push([m.name, c.name, c.enrolled, a, b, b ? Math.round(a * 100 / b) : 0, c.late || 0]);
+        });
+      });
+      var ab = [['الكود', 'الاسم', 'الموديول', 'الفصل', 'المتوقع', 'حضر', 'النسبة %', 'متأخر', 'غياب متتالي', 'أيام الغياب']];
+      stats.slice().sort(function (x, y) { return (x[6] == null ? 101 : x[6]) - (y[6] == null ? 101 : y[6]); })
+        .forEach(function (x) { ab.push([x[0], x[1], x[2], x[3], x[4], x[5], x[6] == null ? '' : x[6], x[7], x[8], x[9].map(fmtDate).join('، ')]); });
+      var det = [['التاريخ', 'الوقت', 'الكود', 'الاسم', 'الموديول', 'الفصل', 'المستخدم', 'المصدر', 'متأخر', 'ملاحظات']];
+      rows.forEach(function (x) { det.push([fmtDate(x[0]), x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8] || '', x[9] || '']); });
+      var name = 'attendance_' + (r.mode === 'all' ? 'all' : (r.from + (r.to && r.to !== r.from ? '_to_' + r.to : ''))) + (fm ? '_' + fm : '') + (fc ? '_' + fc : '') + '.xlsx';
+      downloadBlob(name.replace(/[\\/:*?"<>|\s]+/g, '_'), makeXlsx([
+        { name: 'الملخص', rows: sum, widths: [16, 12, 11, 13, 13, 10, 10] },
+        { name: 'الغياب والنسب', rows: ab, widths: [14, 28, 14, 10, 9, 8, 9, 8, 11, 60] },
+        { name: 'التفاصيل', rows: det, widths: [12, 12, 14, 28, 14, 10, 26, 10, 8, 30] }
+      ]));
+      repMsg('ok', 'تم تنزيل ملف Excel (' + rows.length + ' سجل · نسب ' + stats.length + ' طالب من ' + fmtDate(r.statsFrom) + ' إلى ' + fmtDate(r.statsTo) + ')' + (r.truncated ? ' — تم الاقتصار على أول 30000 صف.' : '') + '.');
     }).catch(function (e) { b.disabled = false; b.textContent = '⬇ تصدير التقرير (Excel)'; repMsg('err', errText(e)); });
   }
 
@@ -1205,7 +1338,7 @@
     var row = mk('div', { className: 'arow set' });
     var ki = mk('input', { type: 'text', value: k || '', placeholder: 'اسم الإعداد' }); ki.classList.add('k');
     var vi;
-    if (String(k || '').toLowerCase() === 'attendance status') {
+    if (['attendance status', 'auto open'].indexOf(String(k || '').toLowerCase()) > -1) {
       vi = mk('select'); ['ON', 'OFF'].forEach(function (o) { var op = mk('option', { value: o, textContent: o }); vi.appendChild(op); });
       vi.value = String(v || 'ON').toUpperCase();
     } else { vi = mk('input', { type: 'text', value: v == null ? '' : v, placeholder: 'القيمة' }); }
@@ -1237,7 +1370,7 @@
 
   function openAdmin() {
     stopScan();
-    show($('mainView'), false); show($('reportView'), false); show($('adminView'), true);
+    show($('mainView'), false); show($('reportView'), false); show($('followView'), false); show($('adminView'), true);
     adminMsg('warn', 'جاري تحميل الإعدادات...');
     api('adminGet').then(function (r) {
       if (!r || !r.ok) { adminMsg('err', r ? r.message : 'خطأ'); return; }
@@ -1286,6 +1419,343 @@
     api('adminRefresh').then(function (r) {
       adminMsg(r && r.ok ? 'ok' : 'err', r ? r.message : 'خطأ');
     }).catch(function (e) { adminMsg('err', errText(e)); });
+  });
+
+  /* ================= v4.3: الجدول + لسه ماحضروش + التراجع ================= */
+  function slotParts(m, c) {
+    m = String(m || ''); c = String(c || '');
+    var mm = m.match(/\d+/), cc = c.match(/\d+/);
+    return { prep: /تمهيدي/.test(m), module: mm ? Number(mm[0]) : 0, cls: cc ? Number(cc[0]) : 0 };
+  }
+  /** نفس جدول الخادم: الأربعاء تمهيدي 1-3 · الخميس موديول 1-4 فصل 1 · الجمعة موديول 1-4 فصل 2 + موديول 5-7 فصل 1 */
+  function isSched(dow, m, c) {
+    var p = slotParts(m, c);
+    if (dow === 3) return p.prep && p.cls >= 1 && p.cls <= 3;
+    if (dow === 4) return !p.prep && p.module >= 1 && p.module <= 4 && p.cls === 1;
+    if (dow === 5) return !p.prep && ((p.module >= 1 && p.module <= 4 && p.cls === 2) || (p.module >= 5 && p.module <= 7 && p.cls === 1));
+    return false;
+  }
+  function schedToday(s) { return isSched(new Date().getDay(), s[3], s[4]); }
+  var DAYS_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+  function dayName(ymd) { var d = new Date(ymd + 'T12:00:00'); return isNaN(d) ? '' : DAYS_AR[d.getDay()]; }
+  function showOff(s) {
+    S.off = true;
+    var w = $('offWarn');
+    w.textContent = '⚠ النهارده (' + DAYS_AR[new Date().getDay()] + ') مش يوم مجموعة الطالب (' + (s[3] || '-') + ' / ' + (s[4] || '-') + '). لو سجّلته هيتكتب «خارج الجدول» ومش هيدخل في نسبة الحضور. متأكد؟';
+    show(w, true);
+  }
+  $('soundOn').checked = (function () { try { return localStorage.getItem('soundOn') !== '0'; } catch (e) { return true; } })();
+  $('soundOn').addEventListener('change', function () { try { localStorage.setItem('soundOn', this.checked ? '1' : '0'); } catch (e) {} if (this.checked) tone(true); });
+
+  /* ---------- لسه ماحضروش النهارده ---------- */
+  var MISS_OPEN = false, MISS_SIG = '';
+  function renderMissing() {
+    var dow = new Date().getDay();
+    var list = [];
+    for (var i = 0; i < D.students.length; i++) {
+      var s = D.students[i];
+      if (!s[2] || ATT[s[0]] || isPending(s[0]) || !isSched(dow, s[3], s[4])) continue;
+      list.push(s);
+    }
+    var anyToday = D.students.some(function (s) { return s[2] && isSched(dow, s[3], s[4]); });
+    show($('missCard'), anyToday && !$('scanWrap').classList.contains('hidden'));
+    $('missCount').textContent = list.length;
+    if (!anyToday || !MISS_OPEN) return;
+    var mods = {}, clss = {};
+    list.forEach(function (s) { mods[s[3]] = 1; if (!$('missMod').value || s[3] === $('missMod').value) clss[s[4]] = 1; });
+    var sig = Object.keys(mods).sort().join('|') + '#' + Object.keys(clss).sort().join('|');
+    if (sig !== MISS_SIG) {
+      MISS_SIG = sig;
+      setOptions($('missMod'), Object.keys(mods).sort(natCmp), 'كل الموديولات');
+      setOptions($('missCls'), Object.keys(clss).sort(natCmp), 'كل الفصول');
+    }
+    var fm = $('missMod').value, fc = $('missCls').value, q = norm($('missSearch').value), toks = q ? q.split(' ') : [];
+    var shown = list.filter(function (s) {
+      if ((fm && s[3] !== fm) || (fc && s[4] !== fc)) return false;
+      var t = norm(s[0] + ' ' + s[1]);
+      return toks.every(function (k) { return t.indexOf(k) > -1; });
+    }).sort(function (a, b) { return natCmp(a[3], b[3]) || natCmp(a[4], b[4]) || (a[1] < b[1] ? -1 : 1); });
+    var box = $('missList'); box.innerHTML = '';
+    var frag = document.createDocumentFragment();
+    shown.slice(0, 250).forEach(function (s) {
+      var d = el('div', 'it');
+      var n = el('span', 'nm', s[1]); n.setAttribute('data-id', s[0]);
+      n.addEventListener('click', function () { handleCode(this.getAttribute('data-id'), false); });
+      d.appendChild(n); d.appendChild(el('small', '', s[3] + ' / ' + s[4]));
+      frag.appendChild(d);
+    });
+    box.appendChild(frag);
+    if (!shown.length) box.appendChild(el('div', 'hint', list.length ? 'لا توجد نتائج.' : '✔ الكل حضر.'));
+    else if (shown.length > 250) box.appendChild(el('div', 'hint', 'يُعرض أول 250 فقط، استخدم التصفية أو البحث.'));
+  }
+  $('missHead').addEventListener('click', function () {
+    MISS_OPEN = !MISS_OPEN; show($('missBody'), MISS_OPEN); $('missArrow').textContent = MISS_OPEN ? '▾' : '▸'; renderMissing();
+  });
+  $('missMod').addEventListener('change', function () { MISS_SIG = ''; $('missCls').value = ''; renderMissing(); });
+  $('missCls').addEventListener('change', renderMissing);
+  $('missSearch').addEventListener('input', renderMissing);
+
+  /* ---------- التراجع عن آخر تسجيل (دقيقتين) ---------- */
+  var UNDO = {};
+  function canUndo(code) { return UNDO[code] && Date.now() - UNDO[code] < 120000; }
+  function doUndo(code, btn) {
+    if (!confirm('إلغاء تسجيل حضور هذا الطالب؟')) return;
+    btn.disabled = true; btn.textContent = '...';
+    api('undo', { code: code }).then(function (r) {
+      if (!r || !r.ok) { btn.disabled = false; btn.textContent = '↩ تراجع'; toast(r ? (r.code === 'BAD_ACTION' ? 'الخادم قديم: انشر Code.gs الجديد.' : r.message) : 'خطأ', 'err'); if (r && r.code === 'UNDO_EXPIRED') { delete UNDO[code]; renderLog(); } return; }
+      delete UNDO[code]; delete ATT[code];
+      MINE = MINE.filter(function (m) { return m[0] !== code; }); saveMine();
+      ITEMS.forEach(function (it) { if (it.code === code && it.state === 'ok') it.state = 'undone'; });
+      var n = Number($('countChip').textContent) || 0; if (n > 0) setCount(n - 1);
+      toast('↩ ' + r.message, 'ok'); renderLog(); refreshCardBadge();
+    }).catch(function (e) { btn.disabled = false; btn.textContent = '↩ تراجع'; toast(errText(e), 'err'); });
+  }
+
+  /* ================= Excel (.xlsx) بدون مكتبات ================= */
+  var CRC_T = null;
+  function crc32(u8) {
+    if (!CRC_T) { CRC_T = []; for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); CRC_T[n] = c >>> 0; } }
+    var crc = 0xFFFFFFFF;
+    for (var i = 0; i < u8.length; i++) crc = CRC_T[(crc ^ u8[i]) & 0xFF] ^ (crc >>> 8);
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+  function zipStore(files) {
+    var enc = new TextEncoder(), parts = [], central = [], off = 0, cdSize = 0;
+    files.forEach(function (f) {
+      var nm = enc.encode(f.name), data = enc.encode(f.text), crc = crc32(data), sz = data.length;
+      var h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+      h.setUint16(10, 0, true); h.setUint16(12, 0x21, true); h.setUint32(14, crc, true); h.setUint32(18, sz, true);
+      h.setUint32(22, sz, true); h.setUint16(26, nm.length, true); h.setUint16(28, 0, true);
+      parts.push(new Uint8Array(h.buffer), nm, data);
+      var c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true);
+      c.setUint16(10, 0, true); c.setUint16(12, 0, true); c.setUint16(14, 0x21, true); c.setUint32(16, crc, true);
+      c.setUint32(20, sz, true); c.setUint32(24, sz, true); c.setUint16(28, nm.length, true); c.setUint32(42, off, true);
+      central.push(new Uint8Array(c.buffer), nm);
+      cdSize += 46 + nm.length; off += 30 + nm.length + sz;
+    });
+    var e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true);
+    e.setUint32(12, cdSize, true); e.setUint32(16, off, true);
+    return parts.concat(central, [new Uint8Array(e.buffer)]);
+  }
+  function xEsc(v) { return String(v).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function colName(i) { var s = ''; i++; while (i > 0) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+  function sheetXml(rows, widths) {
+    var x = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+      '<sheetViews><sheetView rightToLeft="1" workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'];
+    if (widths && widths.length) x.push('<cols>' + widths.map(function (w, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols>');
+    x.push('<sheetData>');
+    rows.forEach(function (r, ri) {
+      var cells = [];
+      r.forEach(function (v, ci) {
+        if (v === null || v === undefined || v === '') return;
+        var ref = colName(ci) + (ri + 1), st = ri === 0 ? ' s="1"' : '';
+        if (typeof v === 'number' && isFinite(v)) cells.push('<c r="' + ref + '"' + st + '><v>' + v + '</v></c>');
+        else cells.push('<c r="' + ref + '" t="inlineStr"' + st + '><is><t xml:space="preserve">' + xEsc(v) + '</t></is></c>');
+      });
+      x.push('<row r="' + (ri + 1) + '">' + cells.join('') + '</row>');
+    });
+    x.push('</sheetData></worksheet>');
+    return x.join('');
+  }
+  function makeXlsx(sheets) {
+    var NS = 'http://schemas.openxmlformats.org/', files = [];
+    var ct = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="' + NS + 'package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>';
+    var wb = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="' + NS + 'spreadsheetml/2006/main" xmlns:r="' + NS + 'officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>';
+    var rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="' + NS + 'package/2006/relationships">';
+    sheets.forEach(function (s, i) {
+      var n = i + 1;
+      ct += '<Override PartName="/xl/worksheets/sheet' + n + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+      wb += '<sheet name="' + xEsc(String(s.name).replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 31)) + '" sheetId="' + n + '" r:id="rId' + n + '"/>';
+      rels += '<Relationship Id="rId' + n + '" Type="' + NS + 'officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + n + '.xml"/>';
+      files.push({ name: 'xl/worksheets/sheet' + n + '.xml', text: sheetXml(s.rows, s.widths) });
+    });
+    rels += '<Relationship Id="rId' + (sheets.length + 1) + '" Type="' + NS + 'officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+    var styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="' + NS + 'spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF7A1F2B"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+    files.unshift(
+      { name: '[Content_Types].xml', text: ct + '</Types>' },
+      { name: '_rels/.rels', text: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="' + NS + 'package/2006/relationships"><Relationship Id="rId1" Type="' + NS + 'officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
+      { name: 'xl/workbook.xml', text: wb + '</sheets></workbook>' },
+      { name: 'xl/_rels/workbook.xml.rels', text: rels },
+      { name: 'xl/styles.xml', text: styles });
+    return new Blob(zipStore(files), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  }
+  function downloadBlob(name, blob) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  }
+
+  /* ================= المتابعة (أدمن): ملف طالب · تنبيهات الغياب · إحصائية الخدام ================= */
+  function boxMsg(id, type, text) { var m = $(id); m.className = 'msg ' + (type || ''); m.textContent = text || ''; show(m, !!text); }
+  function apiErr(r) { return r ? (r.code === 'BAD_ACTION' ? 'الخادم قديم: الصق Code.gs الجديد ثم Deploy ← New version.' : r.message) : 'خطأ'; }
+  function openFollow() {
+    stopScan();
+    show($('mainView'), false); show($('reportView'), false); show($('adminView'), false); show($('followView'), true);
+    $('fwSub').textContent = 'الفصل الدراسي: ' + (D.semName || D.semester) + ' · النسب محسوبة حسب جدول الأربعاء والخميس والجمعة.';
+    window.scrollTo(0, 0);
+  }
+  function closeFollow() { show($('followView'), false); show($('mainView'), true); }
+  $('followChip').addEventListener('click', openFollow);
+  $('fwBack').addEventListener('click', closeFollow);
+
+  // ---- ملف طالب ----
+  var PF = null;
+  $('pfSearch').addEventListener('input', function () {
+    var box = $('pfResults'); box.innerHTML = '';
+    var q = norm(this.value); if (q.length < 2) return;
+    var toks = q.split(' '), n = 0;
+    for (var i = 0; i < D.students.length && n < 20; i++) {
+      if (!toks.every(function (k) { return D.search[i].indexOf(k) > -1; })) continue;
+      n++;
+      var s = D.students[i], d = el('div', 'it');
+      var nm = el('span', 'nm', s[1]); nm.setAttribute('data-id', s[0]);
+      nm.addEventListener('click', function () { loadProfile(this.getAttribute('data-id')); });
+      d.appendChild(nm); d.appendChild(el('small', '', s[0] + (s[2] ? ' · ' + s[3] + ' / ' + s[4] : ' · غير مسجل بالفصل')));
+      box.appendChild(d);
+    }
+    if (!n) box.appendChild(el('div', 'hint', 'لا توجد نتائج'));
+  });
+  $('pfSearch').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    var m = this.value.trim().toUpperCase().match(/MK\d{8}/); if (m) loadProfile(m[0]);
+  });
+  function loadProfile(code) {
+    $('pfResults').innerHTML = ''; $('pfSearch').value = '';
+    boxMsg('pfMsg', 'warn', 'جاري تحميل ملف الطالب...'); $('pfBox').innerHTML = '';
+    api('studentProfile', { code: code }).then(function (r) {
+      if (!r || !r.ok) { boxMsg('pfMsg', 'err', apiErr(r)); return; }
+      boxMsg('pfMsg', '', ''); PF = r; renderProfile();
+      $('pfBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }).catch(function (e) { boxMsg('pfMsg', 'err', errText(e)); });
+  }
+  function cellBox(label, val) { var c = el('div', 'cell'); c.appendChild(el('small', '', label)); c.appendChild(el('span', '', String(val))); return c; }
+  function renderProfile() {
+    var r = PF, box = $('pfBox'); box.innerHTML = '';
+    var head = el('div', '');
+    head.appendChild(el('h3', '', r.name)); head.firstChild.style.cssText = 'margin:10px 0 4px;color:var(--maroon)';
+    var sub = el('div', 'hint', ''); sub.style.padding = '0';
+    sub.appendChild(el('span', 'code', r.code));
+    sub.appendChild(document.createTextNode('  ' + (r.enrolled ? (r.module + ' / ' + r.cls) : 'غير مسجل في هذا الفصل الدراسي')));
+    head.appendChild(sub); box.appendChild(head);
+    var st = r.stat;
+    if (st) {
+      var g = el('div', 'grid5');
+      g.appendChild(cellBox('المتوقع', st[4])); g.appendChild(cellBox('حضر', st[5]));
+      g.appendChild(cellBox('النسبة', st[6] == null ? '-' : st[6] + '%')); g.appendChild(cellBox('متأخر', st[7]));
+      g.appendChild(cellBox('غياب متتالي', st[8]));
+      box.appendChild(g);
+      box.appendChild(el('div', 'hint', 'من ' + fmtDate(r.from) + ' إلى ' + fmtDate(r.to) + ' (اليوم لا يُحسب غيابًا قبل ما يخلص).'));
+    }
+    // إضافة يدوية
+    var add = el('div', 'row'); add.style.marginTop = '6px';
+    var dIn = document.createElement('input'); dIn.type = 'date'; dIn.className = 'ltr'; dIn.max = r.today;
+    var bAdd = el('button', 'btn alt', '＋ تسجيل حضور يدوي'); bAdd.type = 'button';
+    bAdd.addEventListener('click', function () { if (!dIn.value) { boxMsg('pfMsg', 'warn', 'اختر التاريخ.'); return; } attAdd(r.code, dIn.value); });
+    add.appendChild(dIn); add.appendChild(bAdd); box.appendChild(add);
+    // أيام الغياب
+    if (st && st[9].length) {
+      box.appendChild(el('h2', '', '❌ أيام الغياب (' + st[9].length + ')')).style.marginTop = '14px';
+      var ml = el('div', 'lst');
+      st[9].slice().reverse().forEach(function (d) {
+        var it = el('div', 'it');
+        it.appendChild(el('span', '', dayName(d) + ' ' + fmtDate(d)));
+        var b = el('button', 'mini green', '＋ سجّل حاضر'); b.type = 'button';
+        b.addEventListener('click', function () { attAdd(r.code, d); });
+        it.appendChild(b); ml.appendChild(it);
+      });
+      box.appendChild(ml);
+    }
+    // أيام الحضور
+    box.appendChild(el('h2', '', '✔ سجلات الحضور (' + r.days.length + ')')).style.marginTop = '14px';
+    var dl = el('div', 'lst');
+    if (!r.days.length) dl.appendChild(el('div', 'hint', 'لا يوجد حضور مسجل.'));
+    r.days.forEach(function (x) {
+      var it = el('div', 'it'), left = el('span', '');
+      left.appendChild(document.createTextNode(dayName(x[0]) + ' ' + fmtDate(x[0]) + (x[1] ? ' · ' + x[1] : '')));
+      if (x[2]) left.appendChild(el('span', 'tag late', '⏰ متأخر'));
+      if (!x[5]) left.appendChild(el('span', 'tag off', 'خارج الجدول'));
+      left.appendChild(el('span', 'tag', x[4] || ''));
+      if (x[3]) { left.appendChild(document.createElement('br')); left.appendChild(el('small', '', x[3] + (x[6] ? ' · ' + x[6] : ''))); }
+      var b = el('button', 'mini red', '🗑 حذف'); b.type = 'button';
+      b.addEventListener('click', function () { attDel(r.code, x[0]); });
+      it.appendChild(left); it.appendChild(b); dl.appendChild(it);
+    });
+    box.appendChild(dl);
+  }
+  function attAdd(code, date) {
+    if (!confirm('تسجيل حضور ' + (PF ? PF.name : code) + ' يوم ' + dayName(date) + ' ' + fmtDate(date) + '؟')) return;
+    boxMsg('pfMsg', 'warn', 'جاري الحفظ...');
+    api('adminAttAdd', { code: code, date: date }).then(function (r) {
+      if (!r || !r.ok) { boxMsg('pfMsg', 'err', apiErr(r)); return; }
+      toast('✔ ' + r.message, 'ok'); if (date === PF.today) ATT[code] = true; loadProfile(code);
+    }).catch(function (e) { boxMsg('pfMsg', 'err', errText(e)); });
+  }
+  function attDel(code, date) {
+    if (!confirm('حذف حضور ' + (PF ? PF.name : code) + ' يوم ' + dayName(date) + ' ' + fmtDate(date) + '؟ (هيتحفظ نسخة في Attendance Removed)')) return;
+    boxMsg('pfMsg', 'warn', 'جاري الحذف...');
+    api('adminAttDelete', { code: code, date: date }).then(function (r) {
+      if (!r || !r.ok) { boxMsg('pfMsg', 'err', apiErr(r)); return; }
+      toast('✔ ' + r.message, 'ok'); if (date === PF.today) delete ATT[code]; loadProfile(code);
+    }).catch(function (e) { boxMsg('pfMsg', 'err', errText(e)); });
+  }
+
+  // ---- تنبيهات الغياب ----
+  var AB = null;
+  $('abGo').addEventListener('click', function () {
+    var b = this; b.disabled = true; boxMsg('abMsg', 'warn', 'جاري الحساب...'); $('abBox').innerHTML = ''; show($('abExport'), false);
+    api('absenceReport', { opts: { minPct: $('abPct').value, consec: $('abCon').value } }).then(function (r) {
+      b.disabled = false;
+      if (!r || !r.ok) { boxMsg('abMsg', 'err', apiErr(r)); return; }
+      AB = r;
+      boxMsg('abMsg', r.list.length ? 'err' : 'ok', (r.list.length ? ('⚠ ' + r.list.length + ' طالب من ' + r.total) : ('✔ لا يوجد طلاب تحت الحد (' + r.total + ' طالب)')) +
+        ' · نسبة أقل من ' + r.minPct + '% أو غياب متتالي ' + r.consec + '+ · من ' + fmtDate(r.from) + ' إلى ' + fmtDate(r.to));
+      show($('abExport'), r.list.length > 0);
+      var box = $('abBox');
+      r.list.forEach(function (x) {
+        var it = el('div', 'it'), left = el('span', '');
+        var nm = el('span', 'nm', x[1]); nm.setAttribute('data-id', x[0]);
+        nm.addEventListener('click', function () { loadProfile(this.getAttribute('data-id')); });
+        left.appendChild(nm); left.appendChild(document.createElement('br'));
+        left.appendChild(el('small', '', x[0] + ' · ' + x[2] + ' / ' + x[3] + (x[9].length ? ' · آخر غياب ' + fmtDate(x[9][x[9].length - 1]) : '')));
+        var right = el('span', '');
+        right.appendChild(el('span', 'tag ' + (x[6] < r.minPct ? 'off' : ''), x[6] + '% (' + x[5] + '/' + x[4] + ')'));
+        if (x[8]) right.appendChild(el('span', 'tag late', 'متتالي ' + x[8]));
+        it.appendChild(left); it.appendChild(right); box.appendChild(it);
+      });
+    }).catch(function (e) { b.disabled = false; boxMsg('abMsg', 'err', errText(e)); });
+  });
+  $('abExport').addEventListener('click', function () {
+    if (!AB) return;
+    var rows = [['الكود', 'الاسم', 'الموديول', 'الفصل', 'المتوقع', 'حضر', 'النسبة %', 'متأخر', 'غياب متتالي', 'آخر أيام الغياب']];
+    AB.list.forEach(function (x) { rows.push([x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9].map(fmtDate).join('، ')]); });
+    downloadBlob('absence_alerts_' + AB.to + '.xlsx', makeXlsx([{ name: 'تنبيهات الغياب', rows: rows, widths: [14, 28, 14, 10, 9, 8, 9, 8, 11, 60] }]));
+  });
+
+  // ---- إحصائية الخدام ----
+  $('usGo').addEventListener('click', function () {
+    var b = this; b.disabled = true; boxMsg('usMsg', 'warn', 'جاري الحساب...'); $('usBox').innerHTML = '';
+    api('userStats', { opts: { from: $('usFrom').value, to: $('usTo').value } }).then(function (r) {
+      b.disabled = false;
+      if (!r || !r.ok) { boxMsg('usMsg', 'err', apiErr(r)); return; }
+      var tot = r.list.reduce(function (n, x) { return n + x[2]; }, 0);
+      boxMsg('usMsg', 'ok', r.list.length + ' مستخدم · ' + tot + ' تسجيل · ' + (r.from || r.to ? ('من ' + (fmtDate(r.from) || 'البداية') + ' إلى ' + (fmtDate(r.to) || 'اليوم')) : 'الفصل الدراسي كله'));
+      var box = $('usBox');
+      r.list.forEach(function (x) {
+        var it = el('div', 'it'), left = el('span', '');
+        left.appendChild(el('b', '', x[1] || x[0])); left.appendChild(document.createElement('br'));
+        var sm = el('small', 'ltr', x[0]); sm.style.direction = 'ltr'; left.appendChild(sm);
+        left.appendChild(document.createElement('br'));
+        left.appendChild(el('small', '', 'الموقع ' + x[4] + ' · AppSheet ' + x[5] + (x[6] ? ' · يدوي ' + x[6] : '') + ' · آخر يوم ' + fmtDate(x[7])));
+        var right = el('span', '');
+        right.appendChild(el('span', 'tag', x[2] + ' تسجيل'));
+        right.appendChild(el('span', 'tag', x[3] + ' يوم'));
+        it.appendChild(left); it.appendChild(right); box.appendChild(it);
+      });
+    }).catch(function (e) { b.disabled = false; boxMsg('usMsg', 'err', errText(e)); });
   });
 
   /* ---------- boot ---------- */
