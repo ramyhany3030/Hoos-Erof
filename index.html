@@ -119,10 +119,11 @@
 <div id="login" class="block hidden">
   <div class="box" style="width:100%">
     <h2>تسجيل الدخول</h2>
-    <p style="margin:0 0 14px;font-size:14px">سجّل الدخول بحساب Google المسجل لدى المدرسة</p>
-    <div id="gBtn" style="display:flex;justify-content:center;min-height:44px"></div>
-    <div id="loginWait" class="hint hidden">جاري التحقق من الحساب...</div>
+    <p style="margin:0 0 12px;font-size:14px">اكتب بريد Gmail المسجل لدى المدرسة (مرة واحدة فقط)</p>
+    <input type="text" id="emailInput" class="ltr" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="example@gmail.com">
+    <input type="text" id="pinInput" class="ltr hidden" inputmode="numeric" autocomplete="off" placeholder="الرقم السري" style="margin-top:8px">
     <div id="loginErr" class="msg err hidden"></div>
+    <button class="btn" id="loginBtn" style="margin-top:12px">دخول</button>
   </div>
 </div>
 
@@ -203,7 +204,7 @@
     </section>
   </div>
 
-  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 4.1 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
+  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 4.0 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
   <div class="hint" id="srvInfo" style="text-align:center;padding-top:0;direction:ltr"></div>
 </main>
 
@@ -310,10 +311,9 @@
   document.write('<script src="config.js' + (/[?&]r=\d+/.test(location.search) ? '?r=' + Date.now() : '') + '"><' + '/script>');
 </script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
   var API_URL = (window.API_URL || '').trim();
-  var NEED_SERVER = '4.1';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
+  var NEED_SERVER = '4.0';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
   function urlTag() { var m = API_URL.match(/\/s\/([^\/]+)\/exec/); var id = m ? m[1] : API_URL; return id.length > 14 ? id.slice(0, 6) + '…' + id.slice(-8) : id; }
   function verLess(a, b) {
     var x = String(a || '0').split('.').map(Number), y = String(b || '0').split('.').map(Number);
@@ -332,8 +332,7 @@
   var CODE_RE = /^MK\d{8}$/;
   var LS_DATA = 'att_data_v3', LS_Q = 'att_queue_v3', LS_MINE = 'att_mine_v3';
 
-  var AUTH = { session: '', email: '' };
-  var GOOGLE_CLIENT_ID = (window.GOOGLE_CLIENT_ID || '').trim();
+  var AUTH = { email: '', pin: '' };
   var D = { version: '', semester: '', title: '', students: [], map: {}, search: [] };
   var ATT = {};                 // أكواد حضرت اليوم (من كل المستخدمين)
   var MINE = [];                // [[code, name, time]] ما سجّله هذا المستخدم اليوم من هذه الصفحة (الإيميل + web app)
@@ -374,7 +373,7 @@
     var t = $('toast'); t.className = 'toast ' + (type || ''); t.textContent = text;
     clearTimeout(S.toastT); S.toastT = setTimeout(function () { show(t, false); }, 4500);
   }
-  var AUTH_CODES = ['NOT_AUTHORIZED', 'BAD_EMAIL', 'PIN_REQUIRED', 'BAD_PIN', 'LOGIN_REQUIRED'];
+  var AUTH_CODES = ['NOT_AUTHORIZED', 'BAD_EMAIL', 'PIN_REQUIRED', 'BAD_PIN'];
 
   /* ---------- local data cache ---------- */
   function saveData() {
@@ -429,49 +428,18 @@
 
   /* ---------- login / init ---------- */
   function loadSaved() {
-    try {
-      AUTH.session = localStorage.getItem('att_session') || '';
-      AUTH.email = AUTH.session ? (localStorage.getItem('att_email') || '') : '';
-      localStorage.removeItem('att_pin');                      // من نظام الدخول القديم
-    } catch (e) {}
+    try { AUTH.email = localStorage.getItem('att_email') || ''; AUTH.pin = localStorage.getItem('att_pin') || ''; } catch (e) {}
   }
-  function saveAuth() { try { localStorage.setItem('att_session', AUTH.session); localStorage.setItem('att_email', AUTH.email); } catch (e) {} }
+  function saveAuth() { try { localStorage.setItem('att_email', AUTH.email); localStorage.setItem('att_pin', AUTH.pin); } catch (e) {} }
   function clearAuth() {
-    AUTH = { session: '', email: '' };
-    try { localStorage.removeItem('att_session'); localStorage.removeItem('att_email'); localStorage.removeItem('att_pin'); } catch (e) {}
+    AUTH = { email: '', pin: '' };
+    try { localStorage.removeItem('att_email'); localStorage.removeItem('att_pin'); } catch (e) {}
   }
-  /* ---------- Google Sign-In ---------- */
-  var GIS = { ready: false, tries: 0 };
-  function initGoogle() {
-    if (GIS.ready) return;
-    if (!(window.google && google.accounts && google.accounts.id)) {
-      if (++GIS.tries > 60) { loginError('تعذر تحميل خدمة تسجيل الدخول من Google. تأكد من الإنترنت ثم أعد فتح الصفحة.'); return; }
-      setTimeout(initGoogle, 250); return;
-    }
-    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential, auto_select: false, cancel_on_tap_outside: true });
-    google.accounts.id.renderButton($('gBtn'), { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'ar', width: 280 });
-    GIS.ready = true;
-  }
-  function loginError(msg) { var e = $('loginErr'); e.textContent = msg || ''; show(e, !!msg); }
-  function onGoogleCredential(resp) {
-    if (!resp || !resp.credential) { loginError('لم يتم تسجيل الدخول.'); return; }
-    loginError(''); show($('loginWait'), true); show($('gBtn'), false);
-    api('login', { idToken: resp.credential }).then(function (r) {
-      show($('loginWait'), false); show($('gBtn'), true);
-      if (!r || !r.ok) {
-        loginError(r ? (r.code === 'BAD_ACTION' ? 'الخادم قديم: الصق Code.gs الجديد ثم Deploy ← New version.' : r.message) : 'خطأ');
-        try { google.accounts.id.disableAutoSelect(); } catch (e) {}
-        return;
-      }
-      AUTH = { session: r.session, email: r.email };
-      saveAuth(); start();
-    }).catch(function (e) { show($('loginWait'), false); show($('gBtn'), true); loginError(errText(e)); });
-  }
-  function showLogin(msg) {
+  function showLogin(msg, needPin) {
     show($('block'), false); show($('login'), true);
-    show($('loginWait'), false); show($('gBtn'), true);
-    loginError(msg);
-    initGoogle();
+    $('emailInput').value = AUTH.email;
+    show($('pinInput'), !!needPin || !!AUTH.pin);
+    var e = $('loginErr'); e.textContent = msg || ''; show(e, !!msg);
   }
   function renderHeader() {
     $('title').textContent = D.title || 'مدرسة هوس ايروف للشمامسة';
@@ -503,7 +471,8 @@
     return api('init', { version: version }).then(function (r) {
       if (!r || !r.ok) {
         if (r && AUTH_CODES.indexOf(r.code) > -1) {
-          clearAuth(); clearData(); showLogin(r.message);
+          if (r.code !== 'PIN_REQUIRED' && r.code !== 'BAD_PIN') AUTH.pin = '';
+          clearData(); showLogin(r.message, r.code === 'PIN_REQUIRED' || r.code === 'BAD_PIN');
         } else if (!hasLocal) {
           blockScreen('تعذر الدخول', r && r.message);
         } else {
@@ -613,11 +582,17 @@
     Promise.all(jobs).catch(function () {}).then(function () { location.replace(location.pathname + '?r=' + Date.now()); });
   });
 
+  $('loginBtn').addEventListener('click', function () {
+    AUTH.email = $('emailInput').value.trim().toLowerCase();
+    AUTH.pin = $('pinInput').value.trim();
+    start();
+  });
+  $('emailInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('loginBtn').click(); });
+  $('pinInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('loginBtn').click(); });
   $('logoutChip').addEventListener('click', function () {
     var pend = ITEMS.filter(function (i) { return i.state === 'pending' || i.state === 'sending'; }).length;
     if (pend && !confirm('يوجد ' + pend + ' تسجيل لم يُرفع بعد. هل تريد تغيير الحساب؟ (سيتم رفعها عند الدخول مرة أخرى)')) return;
     stopScan(); clearAuth(); clearData(); MINE = []; renderLog(); resetCard(); hideBar();
-    try { google.accounts.id.disableAutoSelect(); } catch (e) {}
     show($('reportView'), false); show($('adminView'), false); show($('mainView'), true);
     showLogin('');
   });
@@ -1235,9 +1210,7 @@
   }
   if (!API_URL || API_URL.indexOf('PASTE_') === 0) {
     blockScreen('الإعداد غير مكتمل', 'ضع رابط الـ Web App (/exec) داخل ملف config.js بجانب index.html.');
-  } else if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.indexOf('PASTE_') === 0) {
-    blockScreen('الإعداد غير مكتمل', 'ضع GOOGLE_CLIENT_ID داخل ملف config.js.');
-  } else if (AUTH.session) {
+  } else if (AUTH.email) {
     start();
   } else {
     showLogin('');
