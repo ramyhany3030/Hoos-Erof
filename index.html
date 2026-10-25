@@ -226,7 +226,7 @@
     </section>
   </div>
 
-  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 4.1 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
+  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 4.2 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
   <div class="hint" id="srvInfo" style="text-align:center;padding-top:0;direction:ltr"></div>
 </main>
 
@@ -335,7 +335,7 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
   var API_URL = (window.API_URL || '').trim();
-  var NEED_SERVER = '4.1';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
+  var NEED_SERVER = '4.2';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
   function urlTag() { var m = API_URL.match(/\/s\/([^\/]+)\/exec/); var id = m ? m[1] : API_URL; return id.length > 14 ? id.slice(0, 6) + '…' + id.slice(-8) : id; }
   function verLess(a, b) {
     var x = String(a || '0').split('.').map(Number), y = String(b || '0').split('.').map(Number);
@@ -355,7 +355,7 @@
   var LS_DATA = 'att_data_v3', LS_Q = 'att_queue_v3', LS_MINE = 'att_mine_v3';
 
   var AUTH = { email: '', pin: '' };
-  var D = { version: '', semester: '', title: '', students: [], map: {}, search: [] };
+  var D = { version: '', semester: '', semName: '', title: '', students: [], map: {}, search: [] };
   var ATT = {};                 // أكواد حضرت اليوم (من كل المستخدمين)
   var MINE = [];                // [[code, name, time]] ما سجّله هذا المستخدم اليوم من هذه الصفحة (الإيميل + web app)
   var S = { current: null, scanning: false, paused: false, busy: false, sending: false, lastBad: 0, last: { code: '', t: 0 }, isAdmin: false, roleKnown: false, cardCode: '', refreshing: false };
@@ -399,7 +399,7 @@
 
   /* ---------- local data cache ---------- */
   function saveData() {
-    try { localStorage.setItem(LS_DATA, JSON.stringify({ email: AUTH.email, version: D.version, semester: D.semester, title: D.title, students: D.students })); } catch (e) {}
+    try { localStorage.setItem(LS_DATA, JSON.stringify({ email: AUTH.email, version: D.version, semester: D.semester, semName: D.semName, title: D.title, students: D.students })); } catch (e) {}
   }
   function loadData() {
     try { var c = JSON.parse(localStorage.getItem(LS_DATA) || 'null'); return (c && c.email === AUTH.email && c.students) ? c : null; } catch (e) { return null; }
@@ -476,7 +476,7 @@
   }
   function renderHeader() {
     $('title').textContent = D.title || 'مدرسة هوس ايروف للشمامسة';
-    $('semChip').textContent = D.semester || '-';
+    $('semChip').textContent = D.semName || D.semester || '-';
     $('userChip').textContent = AUTH.email + (S.roleKnown ? (S.isAdmin ? ' · أدمن' : ' · مستخدم') : '');
     show($('adminChip'), S.isAdmin);
   }
@@ -491,7 +491,7 @@
     MINE = []; loadMine(); renderLog();
     var cached = loadData();
     if (cached) {
-      D.version = cached.version; D.semester = cached.semester; D.title = cached.title; D.students = cached.students;
+      D.version = cached.version; D.semester = cached.semester; D.semName = cached.semName || ''; D.title = cached.title; D.students = cached.students;
       indexData(); renderHeader(); show($('block'), false);
     } else {
       blockScreen('جاري التحميل...', 'يتم التحقق من الحساب وتحميل بيانات الطلاب');
@@ -518,7 +518,7 @@
       S.isAdmin = !!r.isAdmin;
       S.roleKnown = (r.isAdmin !== undefined);
       setSrvInfo(r.ver);
-      D.title = r.title; D.semester = r.semester;
+      D.title = r.title; D.semester = r.semester; D.semName = r.semesterName || r.semester;
       if (r.closed) {
         $('closedMsg').textContent = r.message;
         show($('closedCard'), true); show($('scanWrap'), false);
@@ -826,7 +826,7 @@
   function showCard(s, mode) {
     S.current = s; S.cardCode = s[0];
     $('pvName').textContent = s[1]; $('pvCode').textContent = s[0];
-    $('pvSem').textContent = D.semester; $('pvMod').textContent = s[3]; $('pvCls').textContent = s[4];
+    $('pvSem').textContent = D.semName || D.semester; $('pvMod').textContent = s[3]; $('pvCls').textContent = s[4];
     var a = $('avatar'); a.innerHTML = '';
     a.textContent = (s[1] || '?').charAt(0);
     show($('imgWhy'), false);
@@ -1080,7 +1080,7 @@
       : r.mode === 'day' ? ('يوم ' + fmtDate(r.from))
       : r.mode === 'range' ? ('من ' + fmtDate(r.from) + ' إلى ' + fmtDate(r.to))
       : 'كل الأيام';
-    $('repSub').textContent = 'الفصل الدراسي ' + r.semester + ' · ' + title + (S.isAdmin ? '' : ' · (اليوم الحالي فقط)')
+    $('repSub').textContent = 'الفصل الدراسي: ' + (r.semesterName || r.semester) + ' · ' + title + (S.isAdmin ? '' : ' · (اليوم الحالي فقط)')
       + (filtered ? ' · تصفية: ' + [fm && ('الموديول ' + fm), fc && ('الفصل ' + fc)].filter(Boolean).join(' / ') : '');
 
     // الموديولات بعد التصفية (مع إعادة حساب أعداد الموديول عند تصفية الفصل)
