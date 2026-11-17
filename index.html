@@ -127,7 +127,7 @@
   .lst .it small{color:var(--muted)}
   .grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}
   @media (max-width:420px){.grid5{grid-template-columns:repeat(3,1fr)}}
-  /* ===== v4.7 الإحصائيات (Super Admin) — اتجاه من اليمين لليسار ===== */
+  /* ===== v4.8 الإحصائيات (Super Admin) — اتجاه من اليمين لليسار ===== */
   #statsView{max-width:1150px;direction:rtl;text-align:right}
   #statsView canvas{direction:rtl}
   .p0{padding:0 0 2px!important}
@@ -150,6 +150,14 @@
   .sth{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
   .sth h2{margin:0}
   .chbox{position:relative;width:100%;min-width:0}
+  .chbox canvas{display:block;width:100%;height:auto;margin:0 auto}
+  .chbox.heatwrap canvas{width:auto}
+  .kpi i{display:block;font-style:normal;color:var(--muted);font-size:11px;margin-top:2px}
+  .ckok{padding:10px;border-radius:10px;font-weight:700;margin-bottom:8px}
+  .ckok.g{background:#e3f4ea;color:var(--ok)} .ckok.r{background:#fde8e7;color:var(--err)}
+  .cttbl tr.tot td{background:var(--gold-l);font-weight:700}
+  .holrow{display:grid;grid-template-columns:1fr 1fr 1.3fr 1.6fr auto;gap:6px;align-items:end}
+  @media (max-width:620px){.holrow{grid-template-columns:1fr 1fr}}
   .stempty{padding:26px 12px;text-align:center;color:var(--muted);background:#faf6f0;border-radius:12px;line-height:1.9;font-size:14px}
   .heatwrap{overflow-x:auto;direction:rtl}
   .tblwrap{overflow-x:auto;max-height:480px;overflow-y:auto;direction:rtl}
@@ -306,7 +314,7 @@
     </section>
   </div>
 
-  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 4.7 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
+  <div class="hint" style="text-align:center;margin-top:14px">الإصدار 4.8 · <a href="#" id="hardLink" style="color:var(--maroon)">🧹 مسح كاش الصفحة وإعادة التحميل</a></div>
   <div class="hint" id="srvInfo" style="text-align:center;padding-top:0;direction:ltr"></div>
 </main>
 
@@ -420,7 +428,7 @@
       <h2 style="margin:0">📊 إحصائيات الحضور والالتزام</h2>
       <button class="btn ghost" id="stBack" type="button" style="flex:.3">رجوع ←</button>
     </div>
-    <div class="hint" id="stSub">للـ Super Admin فقط · النسب محسوبة على الحصص المنعقدة فعلًا (اليوم اللي مفيهوش ولا تسجيل = إجازة ومش بيتحسب غياب).</div>
+    <div class="hint" id="stSub">للـ Super Admin فقط · النسب محسوبة على الحصص المنعقدة فعلًا. اليوم اللي مفيهوش ولا تسجيل، أو متسجل إجازة في ⚙ الإعدادات، مش بيتحسب غياب.</div>
     <div class="strow">
       <div><div class="hint p0">فترة سريعة</div>
         <select id="stPreset">
@@ -434,6 +442,7 @@
       <div><div class="hint p0">إلى</div><input type="date" id="stTo"></div>
     </div>
     <label class="toggle"><input type="checkbox" id="stToday"> تضمين حصة النهارده (لو لسه مخلصتش هتظهر غيابات مش نهائية)</label>
+    <label class="toggle"><input type="checkbox" id="stZero"> استبعاد الطلاب اللي محضروش ولا مرة (منقطعين أو مكررين في A25)</label>
     <button class="btn" id="stGo" type="button" style="margin-top:10px">عرض الإحصائيات</button>
     <div class="row stex" style="margin-top:8px">
       <button class="btn alt" id="stPptx" type="button" disabled>📽 PowerPoint</button>
@@ -444,7 +453,7 @@
     <div id="stMsg" class="msg hidden"></div>
   </section>
   <nav class="stnav hidden" id="stNav">
-    <a href="#sec-all">الكلي</a><a href="#sec-day">الأيام</a><a href="#sec-mod">الموديولات</a><a href="#sec-cls">الفصول</a><a href="#sec-stu">الطلاب</a>
+    <a href="#sec-all">الكلي</a><a href="#sec-day">الأيام</a><a href="#sec-mod">الموديولات</a><a href="#sec-cls">الفصول</a><a href="#sec-stu">الطلاب</a><a href="#sec-ck">✔ مراجعة البيانات</a>
   </nav>
   <div id="stBody" class="hidden"></div>
 </main>
@@ -469,6 +478,20 @@
     <div id="setRows"></div>
     <div id="ctBox" class="hidden"><div class="hint" style="padding-bottom:0"><b>⏰ مواعيد التأخير المحسوبة لكل مجموعة</b> (للمراجعة بس، التعديل من شيت Class Times):</div><div class="tblwrap" style="max-height:none"><table class="cttbl" id="ctTbl"></table></div></div>
     <button class="btn alt" id="addSet">+ إضافة إعداد</button>
+  </section>
+
+  <section class="card" id="holCard">
+    <h2>🗓 الإجازات</h2>
+    <div class="hint" style="padding-top:0">يوم الإجازة مش بيتحسب حصة خالص (لا حضور ولا غياب) في الإحصائيات والمتابعة وصفحة الطلبة. تقدر تحدد يوم واحد أو فترة، ولكل المجموعات أو ليوم أو لمجموعة معينة. بيتحفظ في شيت <b>Holidays</b>.</div>
+    <div class="holrow">
+      <div><div class="hint p0">من</div><input type="date" id="holFrom"></div>
+      <div><div class="hint p0">إلى (اختياري)</div><input type="date" id="holTo"></div>
+      <div><div class="hint p0">النطاق</div><select id="holScope"><option>الكل</option></select></div>
+      <div><div class="hint p0">السبب</div><input id="holReason" maxlength="120" placeholder="مثال: عيد / امتحانات"></div>
+      <button class="btn" id="holAdd" type="button" style="padding:10px 14px">+ إضافة</button>
+    </div>
+    <div id="holMsg" class="msg hidden"></div>
+    <div class="tblwrap" style="max-height:320px"><table class="cttbl" id="holTbl"></table></div>
   </section>
 
   <section class="card">
@@ -498,7 +521,7 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
   var API_URL = (window.API_URL || '').trim();
-  var NEED_SERVER = '4.7';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
+  var NEED_SERVER = '4.8';                           // أقل نسخة خادم تعمل مع هذه الصفحة (3.9 = تنبيه التكرار + حذفه للأدمن)
   function urlTag() { var m = API_URL.match(/\/s\/([^\/]+)\/exec/); var id = m ? m[1] : API_URL; return id.length > 14 ? id.slice(0, 6) + '…' + id.slice(-8) : id; }
   function verLess(a, b) {
     var x = String(a || '0').split('.').map(Number), y = String(b || '0').split('.').map(Number);
@@ -1471,6 +1494,7 @@
       ADM_ANYSUPER = r.users.some(function (u) { return u[4] === 'Super Admin'; });
       r.users.forEach(function (u) { addUserRow(u); });
       renderClassTimes(r.classTimes || []);
+      loadHolidays();
       adminMsg('', '');
     }).catch(function (e) { adminMsg('err', errText(e)); });
   }
@@ -1863,10 +1887,9 @@
     t.innerHTML = h + '</tbody>';
     show($('ctBox'), true);
   }
-  /* ================= v4.7 📊 الإحصائيات (Super Admin فقط) — كل النصوص والرسوم من اليمين لليسار ================= */
-  var CHART_URL = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+  /* ================= v4.8 📊 الإحصائيات (Super Admin فقط) — كل النصوص والرسوم من اليمين لليسار ================= */
   var PPTX_URL = 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js';
-  var ST = null, CH = {}, CHT = {}, CHORDER = [], STSUB = '';
+  var ST = null, CHT = {}, CHORDER = [], STSUB = '';
   var SC = { m: '#7a1f2b', g: '#c9a24b', ok: '#1e7b46', y: '#d99a1e', r: '#b3261e', b: '#2a4fa8', gr: '#b9adaf' };
   var DAYC = { 3: '#2a4fa8', 4: '#7a1f2b', 5: '#c9a24b' };
   var LOADED = {};
@@ -1874,7 +1897,7 @@
   /** يثبّت اتجاه الأرقام جوه الكلام العربي: 87.5% و 1/10/2026 و +3 بيفضلوا زي ما هم ومكانهم صح (للموقع والرسوم والباوربوينت) */
   function bd(s) {
     s = String(s == null ? '' : s);
-    return RLM + s.replace(/[+\-]?\d[\d.,:\/]*%?\+?/g, function (m) { return LRM + m + LRM; });
+    return RLM + s.replace(/\d[\d.,:\/]*%?/g, function (m) { return RLM + m + RLM; });
   }
   function loadScript(url) {
     if (LOADED[url]) return LOADED[url];
@@ -1900,7 +1923,7 @@
     stopScan();
     show($('mainView'), false); show($('reportView'), false); show($('adminView'), false); show($('followView'), false); show($('statsView'), true);
     window.scrollTo(0, 0);
-    if (!ST) { syncPreset(); loadStats(false); }
+    if (!ST) { syncPreset(); loadStats(true); }
   }
   function closeStats() { show($('statsView'), false); show($('mainView'), true); }
   function syncPreset() {
@@ -1922,101 +1945,197 @@
   $('stXlsx').addEventListener('click', exportStatsXlsx);
   $('stPptx').addEventListener('click', exportPptx);
 
+  /* ================= v4.8 رسوم بيانية داخلية (Canvas) — من اليمين لليسار، بدون مكتبات خارجية ================= */
+  var CF = '"Segoe UI",Tahoma,Arial,sans-serif';
+  var SPECS = {};
+  function cFont(sz, b) { return (b ? 'bold ' : '') + sz + 'px ' + CF; }
+  function niceMax(v) { if (!(v > 0)) return 1; var p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; }
+  function txt(c, s, x, y, align, font, color, base) {
+    c.font = font; c.fillStyle = color || '#2b2224'; c.textAlign = align || 'right'; c.textBaseline = base || 'middle';
+    c.direction = 'rtl'; c.fillText(bd(s), x, y);
+  }
+  function txtW(c, s, font) { c.font = font; c.direction = 'rtl'; return c.measureText(bd(s)).width; }
+  function wrap2(c, s, font, maxW) {             // سطرين بحد أقصى
+    s = String(s); if (txtW(c, s, font) <= maxW) return [s];
+    var w = s.split(' '), a = '', i = 0;
+    for (; i < w.length; i++) { var t = a ? a + ' ' + w[i] : w[i]; if (txtW(c, t, font) > maxW && a) break; a = t; }
+    return [a, w.slice(i).join(' ')];
+  }
+  function fmtV(sp, v, i, si) { return sp.fmt ? sp.fmt(v, i, si) : (Math.round(v * 10) / 10) + (sp.suffix || ''); }
+  function seriesColor(s, i) { return s.colors ? s.colors[i] : s.color; }
+  function chart(id, spec) { SPECS[id] = spec; drawChart(id); CHT[id] = spec.title; if (CHORDER.indexOf(id) < 0) CHORDER.push(id); }
+  function drawChart(id) {
+    var sp = SPECS[id], cv = $(id); if (!sp || !cv) return;
+    var box = cv.parentNode, W = Math.max(320, Math.floor((box && box.clientWidth) || 760));
+    var real = sp.series.filter(function (s) { return !s.ref; });
+    var nRows = sp.labels.length, nS = real.length;
+    var H = sp.type === 'barH' ? Math.max(260, 120 + nRows * Math.max(26, (sp.stacked ? 1 : nS) * 18 + 10)) : (sp.height || 330);
+    var S = 2; cv.width = W * S; cv.height = H * S; cv.style.width = '100%'; cv.style.maxWidth = W + 'px'; cv.style.height = 'auto';
+    var c = cv.getContext('2d'); c.setTransform(S, 0, 0, S, 0, 0);
+    c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
+    var R = W - 14, L = 14;
+    txt(c, sp.title, R, 16, 'right', cFont(15, 1), SC.m);
+    txt(c, STSUB, R, 36, 'right', cFont(11), '#7b6e70');
+    // مفتاح الرسم من اليمين
+    var y = 58, x = R;
+    var leg = sp.type === 'donut' ? [] : sp.series.filter(function (s) { return !s.noLegend; });
+    if (leg.length > 1 || (leg.length === 1 && sp.legendOne)) {
+      leg.forEach(function (s) {
+        var tw = txtW(c, s.name, cFont(12)) + 26;
+        if (x - tw < L) { x = R; y += 18; }
+        c.fillStyle = s.color || (s.colors && s.colors[0]); 
+        if (s.ref) { c.strokeStyle = s.color; c.setLineDash([5, 3]); c.lineWidth = 2; c.beginPath(); c.moveTo(x - 14, y); c.lineTo(x, y); c.stroke(); c.setLineDash([]); }
+        else c.fillRect(x - 13, y - 6, 13, 12);
+        txt(c, s.name, x - 18, y, 'right', cFont(12));
+        x -= tw + 10;
+      });
+      y += 18;
+    } else y += 2;
+    var top = y + 8;
+    if (sp.type === 'donut') return drawDonut(c, sp, W, H, top);
+    if (sp.type === 'barH') return drawBarH(c, sp, W, H, top);
+    return drawVert(c, sp, W, H, top);
+  }
+  function drawVert(c, sp, W, H, top) {                     // أعمدة رأسية أو خطوط — أول فئة على اليمين، المحور على اليمين
+    var real = sp.series.filter(function (s) { return !s.ref; });
+    var max = sp.max || niceMax(Math.max.apply(null, [1].concat(sp.series.map(function (s) { return sp.stacked ? 0 : Math.max.apply(null, [0].concat(s.data.filter(function (v) { return v != null; }))); }),
+      sp.stacked ? sp.labels.map(function (_, i) { return real.reduce(function (n, s) { return n + (s.data[i] || 0); }, 0); }) : [])) * 1.08);
+    if (sp.axisSuffix === '' && !sp.max) max = Math.max(4, Math.ceil(max / 4) * 4);      // أعداد: تقسيمات صحيحة
+    var labH = sp.sub ? 40 : 34, axisW = 44;
+    var pR = W - 14 - axisW, pL = 18, pT = top + 14, pB = H - labH - 8, pw = pR - pL, ph = pB - pT;
+    var n = sp.labels.length, band = pw / Math.max(n, 1);
+    function yOf(v) { return pB - (v / max) * ph; }
+    function xOf(i) { return pR - (i + 0.5) * band; }
+    c.lineWidth = 1;
+    for (var k = 0; k <= 4; k++) {
+      var v = max * k / 4, yy = yOf(v);
+      c.strokeStyle = k ? '#f0e8e8' : '#cfc3c4'; c.beginPath(); c.moveTo(pL, yy); c.lineTo(pR, yy); c.stroke();
+      txt(c, (Math.round(v * 10) / 10) + (sp.axisSuffix != null ? sp.axisSuffix : (sp.suffix || '')), pR + 6, yy, 'left', cFont(11), '#7b6e70');
+    }
+    var lf = cFont(n > 10 ? 10 : 12);
+    sp.labels.forEach(function (lb, i) {
+      var lines = wrap2(c, lb, lf, band - 4);
+      lines.forEach(function (ln, j) { txt(c, ln, xOf(i), pB + 12 + j * 13, 'center', lf); });
+      if (sp.sub) txt(c, sp.sub[i], xOf(i), pB + 12 + lines.length * 13, 'center', cFont(10), '#7b6e70');
+    });
+    if (sp.goal != null && sp.goal <= max) {
+      c.strokeStyle = SC.r; c.setLineDash([6, 4]); c.lineWidth = 1.5; c.beginPath(); c.moveTo(pL, yOf(sp.goal)); c.lineTo(pR, yOf(sp.goal)); c.stroke(); c.setLineDash([]);
+    }
+    if (sp.type === 'line') {
+      sp.series.forEach(function (s, si) {
+        c.strokeStyle = s.color; c.lineWidth = s.ref ? 1.5 : 2.5; c.setLineDash(s.ref ? [6, 4] : []);
+        c.beginPath(); var started = false;
+        s.data.forEach(function (v, i) { if (v == null) return; var px = xOf(i), py = yOf(v); if (!started) { c.moveTo(px, py); started = true; } else c.lineTo(px, py); });
+        c.stroke(); c.setLineDash([]);
+        if (s.ref) return;
+        s.data.forEach(function (v, i) {
+          if (v == null) return; var px = xOf(i), py = yOf(v);
+          c.fillStyle = '#fff'; c.beginPath(); c.arc(px, py, 4, 0, 7); c.fill(); c.strokeStyle = s.color; c.lineWidth = 2; c.stroke();
+          if (sp.showVals !== false && n <= 16) txt(c, fmtV(sp, v, i, si), px, py - (si % 2 ? -14 : 12), 'center', cFont(10, 1), s.color);
+        });
+      });
+      return;
+    }
+    var gw = band * 0.72, bw = sp.stacked ? gw : gw / Math.max(real.length, 1);
+    sp.labels.forEach(function (_, i) {
+      var acc = 0;
+      real.forEach(function (s, si) {
+        var v = s.data[i]; if (v == null) return;
+        var bx = sp.stacked ? xOf(i) - gw / 2 : xOf(i) + gw / 2 - (si + 1) * bw;      // أول سلسلة على اليمين
+        var y1 = yOf(acc + v), y0 = yOf(acc);
+        c.fillStyle = seriesColor(s, i); c.fillRect(bx + 1, y1, bw - 2, Math.max(y0 - y1, v ? 1 : 0));
+        if (sp.stacked) { if (y0 - y1 > 14) txt(c, fmtV(sp, v, i, si), bx + bw / 2, (y0 + y1) / 2, 'center', cFont(10, 1), '#fff'); acc += v; }
+        else txt(c, fmtV(sp, v, i, si), bx + bw / 2, y1 - 9, 'center', cFont(bw < 34 ? 9 : 11, 1));
+      });
+    });
+  }
+  function drawBarH(c, sp, W, H, top) {                     // أعمدة أفقية — الأسماء على اليمين والأعمدة طالعة ناحية الشمال
+    var real = sp.series.filter(function (s) { return !s.ref; });
+    var max = sp.max || niceMax(Math.max.apply(null, [1].concat(real.map(function (s) { return Math.max.apply(null, [0].concat(s.data.filter(function (v) { return v != null; }))); }))) * 1.1);
+    var lf = cFont(12, 1), labW = Math.min(W * 0.38, Math.max.apply(null, [60].concat(sp.labels.map(function (l) { return txtW(c, l, lf); }))) + 12);
+    var pR = W - 14 - labW, pL = 64, pT = top + 4, pB = H - 30, pw = pR - pL, ph = pB - pT;
+    var n = sp.labels.length, band = ph / Math.max(n, 1);
+    function xOf(v) { return pR - (v / max) * pw; }
+    for (var k = 0; k <= 4; k++) {
+      var v = max * k / 4, xx = xOf(v);
+      c.strokeStyle = k ? '#f0e8e8' : '#cfc3c4'; c.lineWidth = 1; c.beginPath(); c.moveTo(xx, pT); c.lineTo(xx, pB); c.stroke();
+      txt(c, (Math.round(v * 10) / 10) + (sp.suffix || ''), xx, pB + 12, 'center', cFont(11), '#7b6e70');
+    }
+    var gh = band * 0.74, bh = sp.stacked ? gh : gh / Math.max(real.length, 1);
+    sp.labels.forEach(function (lb, i) {
+      var cy = pT + (i + 0.5) * band;
+      txt(c, lb, W - 14, cy, 'right', lf);
+      var acc = 0;
+      real.forEach(function (s, si) {
+        var v = s.data[i]; if (v == null) return;
+        var by = sp.stacked ? cy - gh / 2 : cy - gh / 2 + si * bh;
+        var x0 = xOf(acc), x1 = xOf(acc + v);
+        c.fillStyle = seriesColor(s, i); c.fillRect(x1, by + 1, Math.max(x0 - x1, v ? 1 : 0), bh - 2);
+        if (sp.stacked) { if (x0 - x1 > 30) txt(c, fmtV(sp, v, i, si), (x0 + x1) / 2, by + bh / 2, 'center', cFont(10, 1), '#fff'); acc += v; }
+        else {
+          var vt = fmtV(sp, v, i, si), vf = cFont(bh < 14 ? 9 : 11, 1);
+          if (x1 - 6 - txtW(c, vt, vf) > 2) txt(c, vt, x1 - 4, by + bh / 2, 'right', vf);
+          else txt(c, vt, x1 + 6, by + bh / 2, 'left', vf, '#fff');            // مفيش مكان: جوه العمود
+        }
+      });
+    });
+    if (sp.goal != null) { var gx = xOf(sp.goal); c.strokeStyle = SC.r; c.setLineDash([6, 4]); c.lineWidth = 1.5; c.beginPath(); c.moveTo(gx, pT); c.lineTo(gx, pB); c.stroke(); c.setLineDash([]); }
+  }
+  function drawDonut(c, sp, W, H, top) {
+    var d = sp.series[0], tot = d.data.reduce(function (a, b) { return a + b; }, 0) || 1;
+    var r = Math.min((H - top - 20) / 2, W * 0.22), cx = 24 + r, cy = top + (H - top) / 2, a = -Math.PI / 2;
+    d.data.forEach(function (v, i) {
+      var e = a + v / tot * Math.PI * 2;
+      c.fillStyle = d.colors[i]; c.beginPath(); c.moveTo(cx, cy); c.arc(cx, cy, r, a, e); c.closePath(); c.fill();
+      c.strokeStyle = '#fff'; c.lineWidth = 2; c.stroke(); a = e;
+    });
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(cx, cy, r * 0.55, 0, 7); c.fill();
+    if (sp.center) { txt(c, sp.center[0], cx, cy - 9, 'center', cFont(20, 1), SC.m); txt(c, sp.center[1], cx, cy + 13, 'center', cFont(11), '#7b6e70'); }
+    var ly = cy - (d.data.length - 1) * 16, R = W - 20;
+    sp.labels.forEach(function (lb, i) {
+      c.fillStyle = d.colors[i]; c.fillRect(R - 14, ly - 7, 14, 14);
+      txt(c, lb + ': ' + d.data[i] + ' (' + Math.round(d.data[i] * 1000 / tot) / 10 + '%)', R - 22, ly, 'right', cFont(14, 1));
+      ly += 32;
+    });
+  }
+  var RSZ = null;
+  window.addEventListener('resize', function () { clearTimeout(RSZ); RSZ = setTimeout(function () { if ($('statsView') && !$('statsView').classList.contains('hidden')) Object.keys(SPECS).forEach(drawChart); }, 200); });
   function loadStats(fresh) {
     var b = $('stGo'); b.disabled = true; b.innerHTML = 'جاري الحساب<span class="spin"></span>';
     stMsg('warn', 'جاري حساب الإحصائيات من شيت Attendance...');
-    var opts = { from: $('stFrom').value, to: $('stTo').value, today: $('stToday').checked, fresh: !!fresh };
-    Promise.all([api('superStats', { opts: opts }), loadScript(CHART_URL)]).then(function (res) {
+    api('superStats', { opts: stOpts(fresh) }).then(function (r) {
       b.disabled = false; b.textContent = 'عرض الإحصائيات';
-      var r = res[0];
       if (!r || !r.ok) {
         if (r && AUTH_CODES.indexOf(r.code) > -1) { closeStats(); showLogin(r.message, r.code); return; }
-        stMsg('err', r ? (r.code === 'BAD_ACTION' ? 'الخادم قديم: الصق Code.gs الجديد (4.7) ثم Deploy ← Manage deployments ← Edit ← New version.' : r.message) : 'خطأ'); return;
+        stMsg('err', r ? (r.code === 'BAD_ACTION' ? 'الخادم قديم: الصق Code.gs الجديد (4.8) ثم Deploy ← Manage deployments ← Edit ← New version.' : r.message) : 'خطأ'); return;
       }
       ST = r;
       if (!r.overall.expected) { stMsg('warn', 'لا توجد حصص منعقدة في الفترة دي.'); show($('stBody'), false); show($('stNav'), false); return; }
       stMsg('', '');
-      renderStats();
+      try { renderStats(); } catch (e) { stMsg('err', 'خطأ في عرض الإحصائيات: ' + (e && e.message)); if (window.console) console.error(e); }
     }).catch(function (e) { b.disabled = false; b.textContent = 'عرض الإحصائيات'; stMsg('err', errText(e)); });
   }
-
-  /* ---------- مساعدات الرسم ---------- */
-  var BGP = { id: 'whitebg', beforeDraw: function (ch) { var c = ch.ctx; c.save(); c.globalCompositeOperation = 'destination-over'; c.fillStyle = '#fff'; c.fillRect(0, 0, ch.width, ch.height); c.restore(); } };
-  // أرقام فوق/جنب الأعمدة. بتتحسب من مكان نهاية العمود فتشتغل مع المحاور المعكوسة (يمين لشمال)
-  var VALP = { id: 'vals', afterDatasetsDraw: function (ch) {
-    var o = ch.options.plugins.vals; if (!o) return;
-    var c = ch.ctx, hz = ch.options.indexAxis === 'y';
-    c.save(); c.font = 'bold 11px "Segoe UI",Tahoma,Arial'; c.direction = 'ltr';
-    ch.data.datasets.forEach(function (ds, i) {
-      var meta = ch.getDatasetMeta(i); if (meta.hidden || meta.type === 'line' || ds._ref) return;
-      meta.data.forEach(function (el, j) {
-        var v = ds.data[j]; if (v == null || (o.stacked && v < (o.min || 7))) return;
-        var t = (o.fmt ? o.fmt(v, j, i) : v) + (o.suffix || '');
-        if (o.stacked) {
-          c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle';
-          c.fillText(t, hz ? (el.x + el.base) / 2 : el.x, hz ? el.y : (el.y + el.base) / 2);
-        } else {
-          c.fillStyle = '#2b2224';
-          if (hz) { var left = el.x < el.base; c.textAlign = left ? 'right' : 'left'; c.textBaseline = 'middle'; c.fillText(t, el.x + (left ? -4 : 4), el.y); }
-          else { c.textAlign = 'center'; c.textBaseline = 'bottom'; c.fillText(t, el.x, el.y - 3); }
-        }
-      });
-    });
-    c.restore();
-  } };
+  function stOpts(fresh) { return { from: $('stFrom').value, to: $('stTo').value, today: $('stToday').checked, excludeZero: $('stZero').checked, fresh: !!fresh }; }
   var EMPTY_MSG = {
     noLimit: 'مفيش مواعيد تأخير محددة. اكتب ميعاد بداية كل مجموعة في شيت «Class Times» (العمود D)، واكتب «Late After» في الإعدادات بعدد الدقائق (مثل 30).',
     noLate: 'مفيش أي تأخير في الفترة دي 👏',
     none: 'مفيش بيانات كافية للرسم ده في الفترة المختارة.'
   };
-  function hasData(cfg) {
-    return cfg.data.datasets.some(function (ds) { return !ds._ref && ds.data.some(function (v) { return v != null && Number(v) !== 0 && !isNaN(v); }); });
-  }
   function emptyCard(id, why) {
-    var box = $(id).parentNode;
-    box.style.height = 'auto';
-    box.innerHTML = '<div class="stempty">' + eb(EMPTY_MSG[why] || why) + '</div>';
+    var cv = $(id); if (!cv) return;
+    var box = cv.parentNode; box.innerHTML = '<div class="stempty">' + eb(EMPTY_MSG[why] || why) + '</div>';
     var b = document.querySelector('[data-png="' + id + '"]'); if (b) b.style.display = 'none';
+    delete SPECS[id];
   }
-  /** cfg.rtl = 'h' (أعمدة أفقية) أو 'v' (عمودي/خطي): بيعكس المحاور عشان أول فئة تبقى على اليمين والمحور على اليمين */
-  function mkChart(id, title, cfg, emptyWhy) {
-    if (CH[id]) { CH[id].destroy(); delete CH[id]; }
-    if (!hasData(cfg)) { emptyCard(id, emptyWhy || 'none'); return; }
-    var o = cfg.options = cfg.options || {}, dir = cfg.rtl;
-    o.responsive = true; o.maintainAspectRatio = false; o.devicePixelRatio = 2; o.animation = { duration: 350 };
-    o.locale = 'en-US';
-    o.layout = o.layout || { padding: dir === 'h' ? { left: 54, right: 8, top: 6 } : { top: 24, left: 8, right: 8 } };
-    o.scales = o.scales || {};
-    if (dir === 'h') {
-      o.scales.x = Object.assign({}, o.scales.x || {}, { reverse: true });
-      o.scales.y = Object.assign({}, o.scales.y || {}, { position: 'right' });
-    } else if (dir === 'v') {
-      o.scales.x = Object.assign({}, o.scales.x || {}, { reverse: true });
-      Object.keys(o.scales).forEach(function (k) { if (k !== 'x' && !o.scales[k].position) o.scales[k].position = 'right'; });
-    }
-    o.plugins = o.plugins || {};
-    o.plugins.title = { display: true, text: bd(title), color: SC.m, font: { size: 15, weight: 'bold' }, padding: { bottom: 2 } };
-    o.plugins.subtitle = { display: true, text: bd(STSUB), color: '#7b6e70', font: { size: 11 }, padding: { bottom: 8 } };
-    o.plugins.legend = Object.assign({ rtl: true, textDirection: 'rtl', position: 'bottom', labels: { boxWidth: 14, font: { size: 12 } } }, o.plugins.legend || {});
-    o.plugins.tooltip = Object.assign({ rtl: true, textDirection: 'rtl', callbacks: {
-      title: function (it) { return it.length ? bd(it[0].label) : ''; },
-      label: function (it) { var sfx = (it.dataset.label || '').indexOf('%') > -1 ? '%' : ''; return bd((it.dataset.label || it.label || '') + ': ' + it.formattedValue + sfx); }
-    } }, o.plugins.tooltip || {});
-    cfg.data.labels = (cfg.data.labels || []).map(bd);
-    cfg.data.datasets.forEach(function (ds) { if (ds.label) ds.label = bd(ds.label); });
-    cfg.plugins = (cfg.plugins || []).concat([BGP, VALP]);
-    CH[id] = new Chart($(id).getContext('2d'), cfg);
-    CHT[id] = title; CHORDER.push(id);
-  }
-  function pctAxis(max) { return { min: 0, max: max || 100, ticks: { callback: function (v) { return v + '%'; } }, grid: { color: '#f0e8e8' } }; }
-  function cardHtml(id, title, h, wide, note) {
-    var heat = id.indexOf('heat') === 0;
+  function anyVal(series) { return series.some(function (s) { return !s.ref && s.data.some(function (v) { return v != null && Number(v) !== 0; }); }); }
+  function plot(id, spec, why) { if (!spec.labels.length || !anyVal(spec.series)) { emptyCard(id, why || 'none'); return; } chart(id, spec); }
+  function cardHtml(id, title, wide, note) {
     return '<section class="card' + (wide ? ' wide' : '') + '"><div class="sth"><h2>' + eb(title) + '</h2><button class="mini" type="button" data-png="' + id + '">⬇ PNG</button></div>' +
-      '<div class="' + (heat ? 'heatwrap' : 'chbox') + '" style="' + (heat ? '' : 'height:' + h + 'px') + '"><canvas id="' + id + '" dir="rtl"></canvas></div>' +
+      '<div class="chbox' + (id.indexOf('heat') === 0 ? ' heatwrap' : '') + '"><canvas id="' + id + '"></canvas></div>' +
       (note ? '<div class="hint" style="padding-bottom:0">' + eb(note) + '</div>' : '') + '</section>';
   }
   function tableHtml(rows, first) {
-    var h = '<div class="tblwrap"><table class="sttbl"><thead><tr><th>' + esc(first) + '</th><th>الطلاب</th><th>حصص</th><th>المتوقع</th><th>حضر</th><th>غاب</th><th>الحضور</th><th>الالتزام</th><th>تأخير من الحاضرين</th><th>متوسط التأخير</th><th>تحت 75%</th><th>حضور كامل</th></tr></thead><tbody>';
+    var h = '<div class="tblwrap"><table class="sttbl"><thead><tr><th>' + esc(first) + '</th><th>الطلاب</th><th>أيام منعقدة</th><th>المتوقع</th><th>حضر</th><th>غاب</th><th>الحضور</th><th>الالتزام</th><th>تأخير من الحاضرين</th><th>متوسط التأخير</th><th>تحت 75%</th><th>حضور كامل</th></tr></thead><tbody>';
     rows.forEach(function (a) {
       h += '<tr' + (a.tot ? ' class="tot"' : '') + '><td>' + eb(a.name) + '</td><td>' + nm(a.students) + '</td><td>' + nm(a.sessions) + '</td><td>' + nm(a.expected) + '</td><td>' + nm(a.attended) + '</td><td>' + nm(a.absent) +
         '</td><td><span class="pc ' + pcls(a.pct) + '">' + esc(pv(a.pct)) + '</span></td><td><span class="pc ' + pcls(a.commit) + '">' + esc(pv(a.commit)) + '</span></td><td>' + nm(pv(a.latePct)) +
@@ -2028,23 +2147,25 @@
     var h = '<div class="tblwrap"><table class="sttbl"><thead><tr><th>الاسم</th><th>الكود</th><th>الفصل</th><th>اليوم</th><th>حضر</th><th>الحضور</th><th>مرات التأخير</th><th>غياب متتالي</th><th>آخر غياب</th></tr></thead><tbody>';
     if (!list.length) h += '<tr><td colspan="9" style="text-align:center">لا يوجد ✔</td></tr>';
     list.forEach(function (x) {
-      h += '<tr><td>' + esc(x[1]) + '</td><td>' + nm(x[0]) + '</td><td>' + eb(x[3]) + '</td><td>' + esc(x[4]) + '</td><td>' + eb(x[6] + ' من ' + x[5]) + '</td><td><span class="pc ' + pcls(x[8]) + '">' + esc(pv(x[8])) + '</span></td><td>' + nm(x[7]) +
+      h += '<tr><td><a href="#" class="stuLink" data-code="' + esc(x[0]) + '">' + esc(x[1]) + '</a></td><td>' + nm(x[0]) + '</td><td>' + eb(x[3]) + '</td><td>' + esc(x[4]) + '</td><td>' + eb(x[6] + ' من ' + x[5]) + '</td><td><span class="pc ' + pcls(x[8]) + '">' + esc(pv(x[8])) + '</span></td><td>' + nm(x[7]) +
         '</td><td>' + nm(x[9] || 0) + '</td><td>' + (x[11] ? nm(fd(x[11])) : '—') + '</td></tr>';
     });
     return h + '</tbody></table></div>';
   }
 
   /* ---------- الملاحظات التلقائية ---------- */
+  function wkPct(ws) { var e = 0, a = 0; ws.forEach(function (w) { Object.keys(w.byDay).forEach(function (d) { e += w.byDay[d].exp; a += w.byDay[d].att; }); }); return r1(a, e); }
   function insights(r) {
     var out = [], o = r.overall, q = r.quality || {};
     var noLim = (q.noLimit || []).length, allNoLim = noLim && noLim >= (q.groups || 0);
     function best(list, k, low) { var a = list.filter(function (x) { return x[k] != null; }).slice().sort(function (x, y) { return low ? x[k] - y[k] : y[k] - x[k]; }); return a[0]; }
-    out.push(['', 'نسبة الحضور الكلية ' + pv(o.pct) + (allNoLim ? '' : ' ونسبة الالتزام بالمواعيد ' + pv(o.commit)) + '، على مدار ' + o.sessions + ' يوم دراسي منعقد.']);
+    out.push(['', 'نسبة الحضور الكلية ' + pv(o.pct) + ' (' + o.attended + ' حضور من ' + o.expected + ' حصة متوقعة)' + (allNoLim ? '' : '، ونسبة الالتزام بالمواعيد ' + pv(o.commit)) + '.']);
+    out.push(['', 'الفترة ' + r.weeksSpan + ' أسبوع (الأسبوع بيبدأ الأربعاء)، منها ' + r.weeksHeld + ' أسبوع فيه حصص، وعدد الأيام المنعقدة ' + r.sessionDates + ' يوم.' + (r.holidays.length ? ' وفيه ' + r.holidays.length + ' إجازة مسجلة مش داخلة في الحساب.' : '')]);
     if (r.days.length > 1) {
       var bdy = best(r.days, 'pct'), wd = best(r.days, 'pct', true);
       if (bdy !== wd) out.push([wd.pct < 75 ? 'bad' : '', 'أعلى حضور يوم ' + bdy.name + ' بنسبة ' + pv(bdy.pct) + '، وأقل حضور يوم ' + wd.name + ' بنسبة ' + pv(wd.pct) + '.']);
       var ld = best(r.days, 'latePct');
-      if (ld && ld.latePct >= 10) out.push(['bad', 'أعلى نسبة تأخير يوم ' + ld.name + ': ' + pv(ld.latePct) + ' من الحاضرين' + (ld.avgLate ? '، ومتوسط التأخير ' + ld.avgLate + ' دقيقة.' : '.')]);
+      if (!allNoLim && ld && ld.latePct >= 10) out.push(['bad', 'أعلى نسبة تأخير يوم ' + ld.name + ': ' + pv(ld.latePct) + ' من الحاضرين' + (ld.avgLate ? '، ومتوسط التأخير ' + ld.avgLate + ' دقيقة.' : '.')]);
     }
     if (r.modules.length > 1) {
       var bm = best(r.modules, 'pct'), wm = best(r.modules, 'pct', true);
@@ -2054,121 +2175,140 @@
     if (low.length) out.push(['bad', 'فصول تحت 75%: ' + low.map(function (c) { return c.name + ' (' + pv(c.pct) + ')'; }).join('، ') + '.']);
     else out.push(['good', 'كل الفصول نسبة حضورها 75% أو أكتر.']);
     if (r.weeks.length >= 4) {
-      var wp = function (ws) { var e = 0, a = 0; ws.forEach(function (w) { Object.keys(w.byDay).forEach(function (d) { e += w.byDay[d].exp; a += w.byDay[d].att; }); }); return r1(a, e); };
-      var f = wp(r.weeks.slice(0, 2)), l = wp(r.weeks.slice(-2)), df = Math.round((l - f) * 10) / 10;
-      out.push([df < -3 ? 'bad' : df > 3 ? 'good' : '', 'الحضور في آخر أسبوعين ' + pv(l) + ' مقابل ' + pv(f) + ' في أول أسبوعين (' + (df > 0 ? 'زيادة ' : df < 0 ? 'نقص ' : 'بدون تغيير ') + (df ? Math.abs(df) + ' نقطة' : '') + ').']);
+      var f = wkPct(r.weeks.slice(0, 2)), l = wkPct(r.weeks.slice(-2)), df = Math.round((l - f) * 10) / 10;
+      out.push([df < -3 ? 'bad' : df > 3 ? 'good' : '', 'الحضور في آخر أسبوعين ' + pv(l) + ' مقابل ' + pv(f) + ' في أول أسبوعين (' + (df > 0 ? 'زيادة ' + df + ' نقطة' : df < 0 ? 'نقص ' + Math.abs(df) + ' نقطة' : 'بدون تغيير') + ').']);
     }
     out.push([o.under75 ? 'bad' : 'good', 'عدد الطلاب تحت 75%: ' + o.under75 + ' من ' + o.students + '. وغايبين آخر حصتين أو أكتر: ' + o.consec2 + (o.zero ? '. ومحضروش ولا مرة: ' + o.zero : '') + '.']);
     out.push(['good', 'عدد الطلاب اللي حضورهم كامل 100%: ' + o.perfect + '.']);
+    if (o.zero && o.zero >= o.students * 0.1) out.push(['bad', 'تنبيه: ' + o.zero + ' طالب مسجلين في A25 ومحضروش ولا مرة، وده بيقلل النسب. لو دول منقطعين أو مكررين علّم على «استبعاد اللي محضروش ولا مرة».']);
+    if (q.zeroExcluded) out.push(['', 'تم استبعاد ' + q.zeroExcluded + ' طالب محضروش ولا مرة من الحساب.']);
     if (noLim) out.push(['bad', allNoLim ? 'التأخير والالتزام مش محسوبين لأن مفيش مواعيد بداية في شيت Class Times.' : 'مجموعات من غير ميعاد بداية (التأخير مش محسوب ليها): ' + q.noLimit.join('، ') + '.']);
-    var dq = [q.unknown ? 'أكواد في الحضور مش موجودة في Codes: ' + q.unknown : '', q.extra ? 'حضور في غير يوم المجموعة (مش داخل في النسب): ' + q.extra : '', q.unscheduled ? 'طلاب مجموعتهم مش في الجدول: ' + q.unscheduled : ''].filter(Boolean);
+    var dq = [q.unknown ? 'صفوف حضور بكود مش موجود في Codes: ' + q.unknown : '', q.extra ? 'صفوف حضور في غير يوم المجموعة (مش داخلة في النسب): ' + q.extra : '', q.unscheduled ? 'طلاب مجموعتهم مش في الجدول: ' + q.unscheduled : ''].filter(Boolean);
     if (dq.length) out.push(['', 'جودة البيانات: ' + dq.join(' · ') + '.']);
     return out;
   }
+
+  /* ---------- checkpoint ---------- */
+  var CK_LABELS = [['total', 'إجمالي صفوف Attendance'], ['counted', '✔ محسوبة حضور'], ['dup', 'تكرار لنفس الطالب في نفس اليوم (اتحسب مرة واحدة)'], ['otherSem', 'فصل دراسي تاني'],
+    ['outRange', 'برة الفترة المختارة'], ['today', 'حصة النهارده (مش متضمنة)'], ['holiday', 'في يوم إجازة'], ['wrongDay', 'في غير يوم مجموعة الطالب'],
+    ['notEnrolled', 'الطالب مش مسجل في A25 للفصل الحالي'], ['unknown', 'الكود مش موجود في Codes'], ['noDate', 'من غير تاريخ صحيح'], ['empty', 'من غير كود']];
+  function checkpointHtml(r) {
+    var ck = r.checkpoint, h = '<div class="ckok ' + (ck.ok ? 'g' : 'r') + '">' + (ck.ok ? '✔ كل التحققات سليمة: الأرقام متطابقة مع شيت Attendance' : '✖ فيه تحقق مش مطابق، راجع الجدول') + '</div>';
+    h += '<div class="stgrid"><div><table class="cttbl"><thead><tr><th>تصنيف صفوف Attendance</th><th>العدد</th></tr></thead><tbody>';
+    CK_LABELS.forEach(function (l) { var v = ck.rows[l[0]]; if (l[0] !== 'total' && l[0] !== 'counted' && !v) return; h += '<tr' + (l[0] === 'total' ? ' class="tot"' : '') + '><td>' + esc(l[1]) + '</td><td>' + nm(v) + '</td></tr>'; });
+    h += '</tbody></table></div><div><table class="cttbl"><thead><tr><th>التحقق</th><th>القيمة</th><th>المفروض</th><th></th></tr></thead><tbody>';
+    ck.checks.forEach(function (c) { h += '<tr' + (c.ok ? '' : ' class="miss"') + '><td>' + eb(c.t) + '</td><td>' + nm(c.a) + '</td><td>' + nm(c.b) + '</td><td>' + (c.ok ? '✔' : '✖') + '</td></tr>'; });
+    h += '</tbody></table></div></div>';
+    h += '<div class="hint">مراجعة طالب بعينه: اكتب الكود وهيظهر كل حصة متحسبة عليه وحالتها، وقارنها بالشيت.</div>' +
+      '<div class="row"><input id="ckCode" placeholder="MK12345678" maxlength="40" style="direction:ltr;text-align:center"><button class="btn alt" id="ckGo" type="button" style="flex:.4">مراجعة</button></div><div id="ckOut"></div>';
+    return h;
+  }
+  function studentCheck(code) {
+    var out = $('ckOut'); out.innerHTML = '<div class="hint">جاري المراجعة...</div>';
+    api('statsStudent', { code: code, opts: stOpts(false) }).then(function (r) {
+      if (!r || !r.ok) { out.innerHTML = '<div class="msg err">' + eb(r ? r.message : 'خطأ') + '</div>'; return; }
+      var d = r.detail, s = r.stat, h = '<div class="hint"><b>' + esc(d.name) + '</b> · ' + nm(d.code) + ' · ' + eb(d.group) + ' · يوم ' + esc(d.day) + ' · حضر ' + eb(s[6] + ' من ' + s[5]) + ' = <b>' + esc(pv(s[8])) + '</b> · متأخر ' + nm(s[7]) + '</div>';
+      h += '<div class="tblwrap"><table class="cttbl"><thead><tr><th>التاريخ</th><th>الأسبوع</th><th>الحالة</th><th>وقت التسجيل</th><th>متأخر بعد</th></tr></thead><tbody>';
+      d.rows.forEach(function (x) { h += '<tr' + (x[1] === 'غائب' ? ' class="miss"' : '') + '><td>' + nm(fd(x[0])) + '</td><td>' + nm(weekOf(x[0])) + '</td><td>' + esc(x[1]) + '</td><td>' + nm(x[2] || '—') + '</td><td>' + eb(x[3] || '—') + '</td></tr>'; });
+      out.innerHTML = h + '</tbody></table></div>';
+    }).catch(function (e) { out.innerHTML = '<div class="msg err">' + eb(errText(e)) + '</div>'; });
+  }
+  function wkStartOf(ymd) { var d = new Date(ymd + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() - 3 + 7) % 7)); return d.toISOString().slice(0, 10); }
+  function weekOf(ymd) { return Math.floor((Date.parse(wkStartOf(ymd) + 'T12:00:00Z') - Date.parse(wkStartOf(ST.weekBase) + 'T12:00:00Z')) / 6048e5) + 1; }
 
   /* ---------- عرض الصفحة ---------- */
   function renderStats() {
     var r = ST, o = r.overall, q = r.quality || {};
     var allNoLim = (q.noLimit || []).length && q.noLimit.length >= (q.groups || 0);
-    Object.keys(CH).forEach(function (k) { CH[k].destroy(); }); CH = {}; CHT = {}; CHORDER = [];
-    STSUB = 'الفصل الدراسي: ' + (r.semesterName || r.semester) + ' · من ' + fd(r.from) + ' إلى ' + fd(r.to) + ' · عدد الأيام المنعقدة: ' + o.sessions;
+    SPECS = {}; CHT = {}; CHORDER = [];
+    STSUB = 'الفصل الدراسي: ' + (r.semesterName || r.semester) + ' · من ' + fd(r.from) + ' إلى ' + fd(r.lastDay) + ' · ' + r.weeksSpan + ' أسبوع · ' + r.sessionDates + ' يوم منعقد';
     $('stSub').textContent = bd(STSUB + ' · آخر تحديث ' + r.generatedAt + (r.cached ? ' (من الكاش)' : ''));
-    Chart.defaults.font.family = '"Segoe UI",Tahoma,Arial,sans-serif';
-    Chart.defaults.color = '#2b2224';
-    var nMod = r.modules.length, nCls = r.classes.length;
     var lowStu = r.students.filter(function (x) { return x[5] > 0; }).sort(function (a, b) { return (a[8] - b[8]) || (b[9] - a[9]); });
     var h = '';
     h += '<h3 class="sthead" id="sec-all">1) الكلي</h3>';
     h += '<section class="card"><div class="kpis">' +
-      kpi('المسجلون', o.students, '') + kpi('أيام منعقدة', o.sessions, '') + kpi('نسبة الحضور', pv(o.pct), pcls(o.pct)) + kpi('الالتزام بالمواعيد', allNoLim ? '—' : pv(o.commit), pcls(o.commit)) +
-      kpi('تأخير من الحاضرين', allNoLim ? '—' : pv(o.latePct), o.latePct >= 15 ? 'r' : 'y') + kpi('مرات الغياب', o.absent, 'r') + kpi('طلاب تحت 75%', o.under75, o.under75 ? 'r' : 'g') + kpi('حضور كامل 100%', o.perfect, 'g') +
+      kpi('المسجلون', o.students, '') + kpi('عدد الأسابيع', r.weeksSpan, '', 'منها ' + r.weeksHeld + ' فيها حصص') + kpi('أيام منعقدة', r.sessionDates, '', r.holidays.length ? 'الإجازات: ' + r.holidays.length : '') + kpi('نسبة الحضور', pv(o.pct), pcls(o.pct), o.attended + ' من ' + o.expected) +
+      kpi('الالتزام بالمواعيد', allNoLim ? '—' : pv(o.commit), pcls(o.commit), allNoLim ? 'محتاج Class Times' : (o.onTime + ' في الميعاد')) + kpi('تأخير من الحاضرين', allNoLim ? '—' : pv(o.latePct), o.latePct >= 15 ? 'r' : 'y', allNoLim ? '' : o.late + ' مرة') +
+      kpi('طلاب تحت 75%', o.under75, o.under75 ? 'r' : 'g') + kpi('حضور كامل 100%', o.perfect, 'g') +
       '</div></section>';
     h += '<section class="card"><h2>💡 أهم الملاحظات</h2><ul class="ins">' + insights(r).map(function (x) { return '<li class="' + x[0] + '">' + eb(x[1]) + '</li>'; }).join('') + '</ul></section>';
-    h += '<div class="stgrid">' + cardHtml('c_trend', 'اتجاه الحضور والالتزام أسبوعيًا', 300, true, 'الأسبوع بيبدأ السبت، وأول أسبوع على اليمين. الالتزام = حضر في الميعاد ÷ المتوقع.') +
-      cardHtml('c_mix', 'توزيع الحصص: في الميعاد / متأخر / غائب', 300) + cardHtml('c_dist', 'توزيع الطلاب حسب نسبة الحضور', 300) +
-      cardHtml('c_arr', 'مواعيد الوصول مقارنة بميعاد التأخير', 300, true, 'ميعاد التأخير = ميعاد البداية من شيت Class Times + دقائق Late After.') + '</div>';
-    h += '<h3 class="sthead" id="sec-day">2) حسب اليوم</h3><div class="stgrid">' + cardHtml('c_day', 'الحضور والالتزام حسب اليوم', 300) + cardHtml('c_dayLate', 'التأخير حسب اليوم', 300) +
-      cardHtml('c_dayTrend', 'اتجاه الحضور الأسبوعي لكل يوم', 300, true) + '</div>' +
+    h += '<div class="stgrid">' + cardHtml('c_trend', 'اتجاه الحضور والالتزام أسبوعيًا', true, 'الأسبوع بيبدأ الأربعاء، وأسبوع 1 = أسبوع بداية الفترة (على اليمين). الالتزام = حضر في الميعاد ÷ المتوقع.') +
+      cardHtml('c_mix', 'توزيع الحصص المتوقعة') + cardHtml('c_dist', 'توزيع الطلاب حسب نسبة الحضور') +
+      cardHtml('c_arr', 'مواعيد الوصول مقارنة بميعاد التأخير', true, 'ميعاد التأخير = ميعاد البداية من شيت Class Times + دقائق Late After.') + '</div>';
+    h += '<h3 class="sthead" id="sec-day">2) حسب اليوم</h3><div class="stgrid">' + cardHtml('c_day', 'الحضور والالتزام حسب اليوم') + cardHtml('c_dayLate', 'نسبة التأخير حسب اليوم') +
+      cardHtml('c_dayTrend', 'اتجاه الحضور الأسبوعي لكل يوم', true) + '</div>' +
       '<section class="card">' + tableHtml(r.days.concat([Object.assign({ tot: 1 }, o)]), 'اليوم') + '</section>';
-    h += '<h3 class="sthead" id="sec-mod">3) حسب الموديول</h3><div class="stgrid">' + cardHtml('c_mod', 'نسبة الحضور والالتزام لكل موديول', Math.max(300, nMod * 46 + 110), true) +
-      cardHtml('c_modMix', 'تكوين الحضور لكل موديول (% من المتوقع)', Math.max(300, nMod * 34 + 110), true) + '</div>' +
+    h += '<h3 class="sthead" id="sec-mod">3) حسب الموديول</h3><div class="stgrid">' + cardHtml('c_mod', 'نسبة الحضور والالتزام لكل موديول', true) +
+      cardHtml('c_modMix', 'تكوين الحصص لكل موديول (% من المتوقع)', true) + '</div>' +
       '<section class="card">' + tableHtml(r.modules.concat([Object.assign({ tot: 1 }, o)]), 'الموديول') + '</section>';
-    h += '<h3 class="sthead" id="sec-cls">4) حسب الفصل</h3><div class="stgrid">' + cardHtml('c_cls', 'نسبة الحضور والالتزام لكل فصل', Math.max(320, nCls * 40 + 110), true, 'الخط الأحمر المتقطع = هدف 75%.') +
-      cardHtml('heat_cls', 'خريطة الحضور: الفصل × الأسبوع', 0, true, 'كل خانة = نسبة حضور الفصل في الأسبوع ده. الأحمر محتاج متابعة.') + '</div>' +
+    h += '<h3 class="sthead" id="sec-cls">4) حسب الفصل</h3><div class="stgrid">' + cardHtml('c_cls', 'نسبة الحضور والالتزام لكل فصل', true, 'الخط الأحمر المتقطع = هدف 75%.') +
+      cardHtml('heat_cls', 'خريطة الحضور: الفصل × الأسبوع', true, 'كل خانة = نسبة حضور الفصل في الأسبوع ده. الخانة الرمادي = مفيش حصة (إجازة أو مش منعقد).') + '</div>' +
       '<section class="card">' + tableHtml(r.classes.concat([Object.assign({ tot: 1 }, o)]), 'الفصل') + '</section>';
     var top = lowStu.slice(0, 15);
-    h += '<h3 class="sthead" id="sec-stu">5) الطلاب</h3><div class="stgrid">' + cardHtml('c_low', 'أقل 15 طالب في نسبة الحضور', Math.max(300, top.length * 28 + 110), true) + '</div>';
+    h += '<h3 class="sthead" id="sec-stu">5) الطلاب</h3><div class="stgrid">' + cardHtml('c_low', 'أقل 15 طالب في نسبة الحضور', true) + '</div>';
     var u75 = lowStu.filter(function (x) { return x[8] < 75; });
     h += '<section class="card"><h2>🚨 طلاب تحت 75% (' + nm(u75.length) + ')</h2>' + stuTable(u75) + '</section>';
     var cons = r.students.filter(function (x) { return x[9] >= 2; }).sort(function (a, b) { return b[9] - a[9]; });
     h += '<section class="card"><h2>📵 غايبين آخر حصتين أو أكتر (' + nm(cons.length) + ')</h2>' + stuTable(cons) + '</section>';
     var lates = r.students.filter(function (x) { return x[7] >= 2; }).sort(function (a, b) { return (b[7] - a[7]) || ((b[10] || 0) - (a[10] || 0)); }).slice(0, 30);
-    h += '<section class="card"><h2>⏰ الأكثر تأخيرًا (' + nm(lates.length) + ')</h2>' + stuTable(lates) + '</section>';
+    if (!allNoLim) h += '<section class="card"><h2>⏰ الأكثر تأخيرًا (' + nm(lates.length) + ')</h2>' + stuTable(lates) + '</section>';
+    h += '<h3 class="sthead" id="sec-ck">6) مراجعة البيانات (Checkpoint)</h3><section class="card">' + checkpointHtml(r) + '</section>';
+    if (r.holidays.length) h += '<section class="card"><h2>🗓 الإجازات في الفترة</h2><ul class="ins">' + r.holidays.map(function (x) { return '<li>' + eb(fd(x.from) + (x.to !== x.from ? ' إلى ' + fd(x.to) : '') + ' · ' + x.scope + (x.reason ? ' · ' + x.reason : '')) + '</li>'; }).join('') + '</ul></section>';
     $('stBody').innerHTML = h;
     show($('stBody'), true); show($('stNav'), true);
     [].forEach.call($('stBody').querySelectorAll('[data-png]'), function (b) { b.addEventListener('click', function () { downloadPng(this.getAttribute('data-png')); }); });
+    [].forEach.call($('stBody').querySelectorAll('.stuLink'), function (a) { a.addEventListener('click', function (e) { e.preventDefault(); $('ckCode').value = this.getAttribute('data-code'); $('sec-ck').scrollIntoView(); studentCheck(this.getAttribute('data-code')); }); });
+    $('ckGo').addEventListener('click', function () { var v = $('ckCode').value.trim(); if (v) studentCheck(v); });
     $('stPptx').disabled = false; $('stXlsx').disabled = false; $('stPrint').disabled = false;
     var lateWhy = allNoLim ? 'noLimit' : 'noLate';
 
     // --- الكلي ---
-    var wl = r.weeks.map(function (w) { return 'أسبوع ' + fdw(w.w); });
+    var wl = r.weeks.map(function (w) { return 'أسبوع ' + w.n; }), ws = r.weeks.map(function (w) { return fdw(w.w); });
     var wSum = r.weeks.map(function (w) { var e = 0, a = 0, l = 0; Object.keys(w.byDay).forEach(function (d) { e += w.byDay[d].exp; a += w.byDay[d].att; l += w.byDay[d].late; }); return { e: e, a: a, l: l }; });
-    var trendDs = [{ label: 'الحضور %', data: wSum.map(function (x) { return r1(x.a, x.e); }), borderColor: SC.m, backgroundColor: 'rgba(122,31,43,.12)', fill: true, tension: .3, pointRadius: 4 }];
-    if (!allNoLim) trendDs.push({ label: 'الالتزام بالمواعيد %', data: wSum.map(function (x) { return r1(x.a - x.l, x.e); }), borderColor: SC.g, backgroundColor: SC.g, tension: .3, pointRadius: 4 });
-    trendDs.push({ label: 'الهدف 75%', _ref: true, data: wl.map(function () { return 75; }), borderColor: SC.r, borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5 });
-    mkChart('c_trend', 'اتجاه الحضور والالتزام أسبوعيًا', { type: 'line', rtl: 'v', data: { labels: wl, datasets: trendDs }, options: { scales: { y: pctAxis() } } });
-    var mixL = ['في الميعاد ' + pv(r1(o.onTime, o.expected)), 'متأخر ' + pv(r1(o.late, o.expected)), 'غائب ' + pv(r1(o.absent, o.expected))];
-    mkChart('c_mix', 'توزيع الحصص: في الميعاد / متأخر / غائب', { type: 'doughnut', data: { labels: allNoLim ? ['حضر ' + pv(o.pct), mixL[2]] : mixL,
-      datasets: [{ data: allNoLim ? [o.attended, o.absent] : [o.onTime, o.late, o.absent], backgroundColor: allNoLim ? [SC.ok, SC.r] : [SC.ok, SC.y, SC.r], borderWidth: 2 }] },
-      options: { cutout: '55%' } });
-    mkChart('c_dist', 'توزيع الطلاب حسب نسبة الحضور', { type: 'bar', rtl: 'v', data: { labels: ['أقل من 50%', 'من 50% لـ 74%', 'من 75% لـ 89%', 'من 90% لـ 100%'],
-      datasets: [{ label: 'عدد الطلاب', data: o.buckets, backgroundColor: [SC.r, SC.y, '#7fbf8e', SC.ok], borderRadius: 6 }] },
-      options: { plugins: { legend: { display: false }, vals: { fmt: function (v) { return v + ' (' + Math.round(v * 100 / (o.students || 1)) + '%)'; } } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } } });
-    mkChart('c_arr', 'مواعيد الوصول مقارنة بميعاد التأخير', { type: 'bar', rtl: 'v', data: { labels: r.arrLabels,
-      datasets: r.days.map(function (d) { return { label: d.name, data: d.arr, backgroundColor: DAYC[d.dow], borderRadius: 4 }; }) },
-      options: { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } } } }, 'noLimit');
+    var trendS = [{ name: 'الحضور %', color: SC.m, data: wSum.map(function (x) { return r1(x.a, x.e); }) }];
+    if (!allNoLim) trendS.push({ name: 'الالتزام %', color: SC.g, data: wSum.map(function (x) { return r1(x.a - x.l, x.e); }) });
+    trendS.push({ name: 'الهدف 75%', color: SC.r, ref: true, data: wl.map(function () { return 75; }) });
+    plot('c_trend', { type: 'line', title: 'اتجاه الحضور والالتزام أسبوعيًا', labels: wl, sub: ws, series: trendS, max: 100, suffix: '%', legendOne: true });
+    plot('c_mix', { type: 'donut', title: 'توزيع الحصص المتوقعة', labels: allNoLim ? ['حضر', 'غائب'] : ['في الميعاد', 'متأخر', 'غائب'], height: 300,
+      series: [{ data: allNoLim ? [o.attended, o.absent] : [o.onTime, o.late, o.absent], colors: allNoLim ? [SC.ok, SC.r] : [SC.ok, SC.y, SC.r] }], center: [pv(o.pct), 'حضور'] });
+    plot('c_dist', { type: 'barV', title: 'توزيع الطلاب حسب نسبة الحضور', labels: ['أقل من 50%', 'من 50% لـ 74%', 'من 75% لـ 89%', 'من 90% لـ 100%'], height: 300,
+      series: [{ name: 'عدد الطلاب', colors: [SC.r, SC.y, '#7fbf8e', SC.ok], data: o.buckets }], axisSuffix: '', fmt: function (v) { return v + ' (' + Math.round(v * 100 / (o.students || 1)) + '%)'; } });
+    plot('c_arr', { type: 'barV', title: 'مواعيد الوصول مقارنة بميعاد التأخير', labels: r.arrLabels, stacked: true, axisSuffix: '',
+      series: r.days.map(function (d) { return { name: d.name, color: DAYC[d.dow], data: d.arr }; }) }, 'noLimit');
 
     // --- الأيام ---
     var dn = r.days.map(function (d) { return d.name; });
-    var dayDs = [{ label: 'الحضور %', data: r.days.map(function (d) { return d.pct; }), backgroundColor: SC.m, borderRadius: 6 }];
-    if (!allNoLim) dayDs.push({ label: 'الالتزام %', data: r.days.map(function (d) { return d.commit; }), backgroundColor: SC.g, borderRadius: 6 });
-    mkChart('c_day', 'الحضور والالتزام حسب اليوم', { type: 'bar', rtl: 'v', data: { labels: dn, datasets: dayDs },
-      options: { plugins: { vals: { suffix: '%' } }, scales: { y: pctAxis() } } });
-    mkChart('c_dayLate', 'التأخير حسب اليوم', { type: 'bar', rtl: 'v', data: { labels: dn, datasets: [
-      { label: 'تأخير % من الحاضرين', data: r.days.map(function (d) { return d.latePct; }), backgroundColor: SC.y, borderRadius: 6, yAxisID: 'y' },
-      { label: 'متوسط التأخير (دقيقة)', data: r.days.map(function (d) { return d.avgLate; }), backgroundColor: SC.r, borderRadius: 6, yAxisID: 'y1' }] },
-      options: { plugins: { vals: {} }, scales: { y: { beginAtZero: true, position: 'right', ticks: { callback: function (v) { return v + '%'; } } }, y1: { beginAtZero: true, position: 'left', grid: { display: false }, ticks: { callback: function (v) { return bd(v + ' د'); } } } } } }, lateWhy);
-    mkChart('c_dayTrend', 'اتجاه الحضور الأسبوعي لكل يوم', { type: 'line', rtl: 'v', data: { labels: wl, datasets: r.days.map(function (d) {
-      return { label: d.name, data: r.weeks.map(function (w) { var x = w.byDay[d.dow]; return x ? r1(x.att, x.exp) : null; }), borderColor: DAYC[d.dow], backgroundColor: DAYC[d.dow], tension: .3, spanGaps: true, pointRadius: 4 }; }) },
-      options: { scales: { y: pctAxis() } } });
+    var dayS = [{ name: 'الحضور %', color: SC.m, data: r.days.map(function (d) { return d.pct; }) }];
+    if (!allNoLim) dayS.push({ name: 'الالتزام %', color: SC.g, data: r.days.map(function (d) { return d.commit; }) });
+    plot('c_day', { type: 'barV', title: 'الحضور والالتزام حسب اليوم', labels: dn, series: dayS, max: 100, suffix: '%', height: 300 });
+    plot('c_dayLate', { type: 'barV', title: 'نسبة التأخير حسب اليوم', labels: dn, height: 300, suffix: '%',
+      sub: r.days.map(function (d) { return d.avgLate ? 'متوسط ' + d.avgLate + ' دقيقة' : ''; }),
+      series: [{ name: 'تأخير % من الحاضرين', color: SC.y, data: allNoLim ? [] : r.days.map(function (d) { return d.latePct; }) }] }, lateWhy);
+    plot('c_dayTrend', { type: 'line', title: 'اتجاه الحضور الأسبوعي لكل يوم', labels: wl, sub: ws, max: 100, suffix: '%', legendOne: true,
+      series: r.days.map(function (d) { return { name: d.name, color: DAYC[d.dow], data: r.weeks.map(function (w) { var x = w.byDay[d.dow]; return x ? r1(x.att, x.exp) : null; }) }; }) });
 
     // --- الموديولات ---
     var mn = r.modules.map(function (m) { return m.name; });
-    var modDs = [{ label: 'الحضور %', data: r.modules.map(function (m) { return m.pct; }), backgroundColor: SC.m, borderRadius: 5 }];
-    if (!allNoLim) modDs.push({ label: 'الالتزام %', data: r.modules.map(function (m) { return m.commit; }), backgroundColor: SC.g, borderRadius: 5 });
-    mkChart('c_mod', 'نسبة الحضور والالتزام لكل موديول', { type: 'bar', rtl: 'h', data: { labels: mn, datasets: modDs },
-      options: { indexAxis: 'y', plugins: { vals: { suffix: '%' } }, scales: { x: pctAxis() } } });
-    var mixDs = [{ label: 'في الميعاد', data: r.modules.map(function (m) { return r1(m.onTime, m.expected); }), backgroundColor: SC.ok }];
-    if (!allNoLim) mixDs.push({ label: 'متأخر', data: r.modules.map(function (m) { return r1(m.late, m.expected); }), backgroundColor: SC.y });
-    else mixDs[0].label = 'حضر';
-    mixDs.push({ label: 'غائب', data: r.modules.map(function (m) { return r1(m.absent, m.expected); }), backgroundColor: SC.r });
-    mkChart('c_modMix', 'تكوين الحضور لكل موديول (% من المتوقع)', { type: 'bar', rtl: 'h', data: { labels: mn, datasets: mixDs },
-      options: { indexAxis: 'y', plugins: { vals: { stacked: true, suffix: '%', fmt: function (v) { return Math.round(v); } } }, scales: { x: Object.assign(pctAxis(), { stacked: true }), y: { stacked: true } } } });
+    var modS = [{ name: 'الحضور %', color: SC.m, data: r.modules.map(function (m) { return m.pct; }) }];
+    if (!allNoLim) modS.push({ name: 'الالتزام %', color: SC.g, data: r.modules.map(function (m) { return m.commit; }) });
+    plot('c_mod', { type: 'barH', title: 'نسبة الحضور والالتزام لكل موديول', labels: mn, series: modS, max: 100, suffix: '%', goal: 75 });
+    var mixS = allNoLim ? [{ name: 'حضر', color: SC.ok, data: r.modules.map(function (m) { return r1(m.attended, m.expected); }) }]
+      : [{ name: 'في الميعاد', color: SC.ok, data: r.modules.map(function (m) { return r1(m.onTime, m.expected); }) }, { name: 'متأخر', color: SC.y, data: r.modules.map(function (m) { return r1(m.late, m.expected); }) }];
+    mixS.push({ name: 'غائب', color: SC.r, data: r.modules.map(function (m) { return r1(m.absent, m.expected); }) });
+    plot('c_modMix', { type: 'barH', title: 'تكوين الحصص لكل موديول (% من المتوقع)', labels: mn, series: mixS, max: 100, suffix: '%', stacked: true, legendOne: true, fmt: function (v) { return Math.round(v) + '%'; } });
 
     // --- الفصول ---
-    var goal = { id: 'goal', afterDatasetsDraw: function (ch) { var x = ch.scales.x, a = ch.chartArea, c = ch.ctx, px = x.getPixelForValue(75); c.save(); c.strokeStyle = SC.r; c.setLineDash([6, 4]); c.lineWidth = 1.5; c.beginPath(); c.moveTo(px, a.top); c.lineTo(px, a.bottom); c.stroke(); c.restore(); } };
-    var clsDs = [{ label: 'الحضور %', data: r.classes.map(function (c) { return c.pct; }), backgroundColor: r.classes.map(function (c) { return c.pct < 75 ? SC.r : SC.m; }), borderRadius: 5 }];
-    if (!allNoLim) clsDs.push({ label: 'الالتزام %', data: r.classes.map(function (c) { return c.commit; }), backgroundColor: SC.g, borderRadius: 5 });
-    mkChart('c_cls', 'نسبة الحضور والالتزام لكل فصل', { type: 'bar', rtl: 'h', plugins: [goal], data: { labels: r.classes.map(function (c) { return c.name; }), datasets: clsDs },
-      options: { indexAxis: 'y', plugins: { vals: { suffix: '%' } }, scales: { x: pctAxis() } } });
+    var clsS = [{ name: 'الحضور %', color: SC.m, colors: r.classes.map(function (c) { return c.pct < 75 ? SC.r : SC.m; }), data: r.classes.map(function (c) { return c.pct; }) }];
+    if (!allNoLim) clsS.push({ name: 'الالتزام %', color: SC.g, data: r.classes.map(function (c) { return c.commit; }) });
+    plot('c_cls', { type: 'barH', title: 'نسبة الحضور والالتزام لكل فصل', labels: r.classes.map(function (c) { return c.name; }), series: clsS, max: 100, suffix: '%', goal: 75 });
     if (r.heat.rows.length && r.heat.cols.length) drawHeat('heat_cls', 'خريطة الحضور: الفصل × الأسبوع', r.heat); else emptyCard('heat_cls', 'none');
 
     // --- الطلاب ---
-    mkChart('c_low', 'أقل 15 طالب في نسبة الحضور', { type: 'bar', rtl: 'h', data: { labels: top.map(function (x) { return x[1] + ' (' + x[3] + ')'; }), datasets: [
-      { label: 'الحضور %', data: top.map(function (x) { return x[8] == null ? null : Math.max(x[8], 0.5); }), backgroundColor: top.map(function (x) { return x[8] < 50 ? SC.r : x[8] < 75 ? SC.y : SC.ok; }), borderRadius: 4 }] },
-      options: { indexAxis: 'y', plugins: { legend: { display: false }, vals: { fmt: function (v, j) { return Math.round(top[j][8]) + '% (' + top[j][6] + '/' + top[j][5] + ')'; } } }, scales: { x: pctAxis() } } });
+    plot('c_low', { type: 'barH', title: 'أقل 15 طالب في نسبة الحضور', labels: top.map(function (x) { return x[1] + ' (' + x[3] + ')'; }), max: 100, suffix: '%', goal: 75,
+      series: [{ name: 'الحضور %', colors: top.map(function (x) { return x[8] < 50 ? SC.r : x[8] < 75 ? SC.y : SC.ok; }), data: top.map(function (x) { return x[8] == null ? null : Math.max(x[8], 0.4); }) }],
+      fmt: function (v, j) { return Math.round(top[j][8]) + '% (' + top[j][6] + ' من ' + top[j][5] + ')'; } });
   }
-  function kpi(label, val, cls) { return '<div class="kpi ' + (cls || '') + '"><b>' + esc(val) + '</b><small>' + esc(label) + '</small></div>'; }
+  function kpi(label, val, cls, sub) { return '<div class="kpi ' + (cls || '') + '"><b>' + esc(val) + '</b><small>' + esc(label) + '</small>' + (sub ? '<i>' + eb(sub) + '</i>' : '') + '</div>'; }
 
   /* ---------- خريطة حرارية (Canvas) — الأسماء على اليمين وأول أسبوع جنبها ---------- */
   function heatColor(p) {
@@ -2181,18 +2321,18 @@
   }
   function drawHeat(id, title, hm) {
     var cv = $(id), rows = hm.rows, cols = hm.cols;
-    var LW = 150, CW = 58, RH = 30, TOP = 74, PAD = 14, LEG = 30;
+    var LW = 150, CW = 58, RH = 30, TOP = 88, PAD = 14, LEG = 30;
     var W = Math.max(560, PAD * 2 + LW + cols.length * CW), H = TOP + rows.length * RH + LEG + PAD;
-    var S = 2; cv.width = W * S; cv.height = H * S; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    var S = 2; cv.width = W * S; cv.height = H * S; cv.style.width = W + 'px'; cv.style.height = H + 'px'; cv.style.maxWidth = 'none';
     var c = cv.getContext('2d'); c.scale(S, S);
     c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
     c.direction = 'rtl'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillStyle = SC.m; c.font = 'bold 15px "Segoe UI",Tahoma,Arial'; c.fillText(bd(title), W / 2, 16);
-    c.fillStyle = '#7b6e70'; c.font = '11px "Segoe UI",Tahoma,Arial'; c.fillText(bd(STSUB), W / 2, 34);
+    c.fillStyle = SC.m; c.font = 'bold 15px "Segoe UI",Tahoma,Arial'; c.textAlign = 'right'; c.fillText(bd(title), W - PAD, 16);
+    c.fillStyle = '#7b6e70'; c.font = '11px "Segoe UI",Tahoma,Arial'; c.fillText(bd(STSUB), W - PAD, 36); c.textAlign = 'center';
     var xR = W - PAD - LW;                                // حافة الخانات من اليمين
     function cx(j) { return xR - (j + 1) * CW; }
     c.font = 'bold 11px "Segoe UI",Tahoma,Arial'; c.fillStyle = '#2b2224';
-    cols.forEach(function (w, j) { c.fillText(bd(fdw(w)), cx(j) + CW / 2, TOP - 12); });
+    cols.forEach(function (w, j) { c.fillText(bd('أسبوع ' + (hm.nums ? hm.nums[j] : j + 1)), cx(j) + CW / 2, TOP - 26); c.font = '10px "Segoe UI",Tahoma,Arial'; c.fillStyle = '#7b6e70'; c.fillText(bd(fdw(w)), cx(j) + CW / 2, TOP - 11); c.font = 'bold 11px "Segoe UI",Tahoma,Arial'; c.fillStyle = '#2b2224'; });
     rows.forEach(function (rn, i) {
       var y = TOP + i * RH;
       c.textAlign = 'right'; c.fillStyle = '#2b2224'; c.font = 'bold 12px "Segoe UI",Tahoma,Arial';
@@ -2216,7 +2356,6 @@
 
   /* ---------- التصدير ---------- */
   function imgOf(id) {
-    if (CH[id]) { var cv = CH[id].canvas; return { data: CH[id].toBase64Image('image/png', 1), w: cv.width, h: cv.height }; }
     var c = $(id); return { data: c.toDataURL('image/png'), w: c.width, h: c.height };
   }
   function safeName(t) { return String(t).replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 60); }
@@ -2230,9 +2369,9 @@
   function exportStatsXlsx() {
     var r = ST, H = ['المستوى', 'الطلاب', 'أيام منعقدة', 'المتوقع', 'حضر', 'متأخر', 'غاب', 'الحضور %', 'الالتزام %', 'تأخير % من الحاضرين', 'متوسط التأخير (د)', 'تحت 75%', 'غياب متتالي 2+', 'حضور كامل'];
     var W = [22, 9, 11, 9, 8, 8, 8, 10, 10, 14, 13, 9, 13, 10];
-    var wk = [['الأسبوع (يبدأ السبت)', 'اليوم', 'المتوقع', 'حضر', 'متأخر', 'الحضور %', 'الالتزام %']];
-    r.weeks.forEach(function (w) { [3, 4, 5].forEach(function (d) { var x = w.byDay[d]; if (x) wk.push([fd(w.w), DAYS_AR[d], x.exp, x.att, x.late, r1(x.att, x.exp), r1(x.att - x.late, x.exp)]); }); });
-    var hm = [['الفصل'].concat(r.heat.cols.map(fd))]; r.heat.rows.forEach(function (n, i) { hm.push([n].concat(r.heat.cells[i].map(function (v) { return v == null ? '' : v; }))); });
+    var wk = [['رقم الأسبوع', 'بداية الأسبوع (أربعاء)', 'اليوم', 'المتوقع', 'حضر', 'متأخر', 'الحضور %', 'الالتزام %']];
+    r.weeks.forEach(function (w) { [3, 4, 5].forEach(function (d) { var x = w.byDay[d]; if (x) wk.push([w.n, fd(w.w), DAYS_AR[d], x.exp, x.att, x.late, r1(x.att, x.exp), r1(x.att - x.late, x.exp)]); }); });
+    var hm = [['الفصل'].concat(r.heat.cols.map(function (w, j) { return 'أسبوع ' + r.heat.nums[j] + ' (' + fd(w) + ')'; }))]; r.heat.rows.forEach(function (n, i) { hm.push([n].concat(r.heat.cells[i].map(function (v) { return v == null ? '' : v; }))); });
     var st = [['الكود', 'الاسم', 'الموديول', 'الفصل', 'اليوم', 'المتوقع', 'حضر', 'متأخر', 'الحضور %', 'غياب متتالي', 'متوسط التأخير (د)', 'آخر غياب']];
     r.students.slice().sort(function (a, b) { return (a[8] == null ? 101 : a[8]) - (b[8] == null ? 101 : b[8]); }).forEach(function (x) { st.push([x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8] == null ? '' : x[8], x[9], x[10] == null ? '' : x[10], x[11] ? fd(x[11]) : '']); });
     var ins = [['ملاحظات · ' + STSUB]].concat(insights(r).map(function (x) { return [x[1]]; }));
@@ -2240,8 +2379,10 @@
       { name: 'الكلي والأيام', rows: [H, aggRow(r.overall)].concat(r.days.map(aggRow)), widths: W },
       { name: 'الموديولات', rows: [H].concat(r.modules.map(aggRow), [aggRow(r.overall)]), widths: W },
       { name: 'الفصول', rows: [H].concat(r.classes.map(aggRow), [aggRow(r.overall)]), widths: W },
-      { name: 'الأسابيع', rows: wk, widths: [20, 10, 9, 8, 8, 10, 10] },
-      { name: 'خريطة الفصول', rows: hm, widths: [22].concat(r.heat.cols.map(function () { return 10; })) },
+      { name: 'الأسابيع', rows: wk, widths: [11, 20, 10, 9, 8, 8, 10, 10] },
+      { name: 'Checkpoint', rows: [['البند', 'القيمة', 'المفروض', 'النتيجة']].concat(CK_LABELS.map(function (l) { return [l[1], r.checkpoint.rows[l[0]], '', '']; }), [['', '', '', '']], r.checkpoint.checks.map(function (c) { return [c.t, c.a, c.b, c.ok ? '✔' : '✖']; })), widths: [60, 12, 12, 10] },
+      { name: 'الإجازات', rows: [['من', 'إلى', 'النطاق', 'السبب']].concat(r.holidays.map(function (x) { return [fd(x.from), fd(x.to), x.scope, x.reason]; })), widths: [12, 12, 22, 40] },
+      { name: 'خريطة الفصول', rows: hm, widths: [22].concat(r.heat.cols.map(function () { return 18; })) },
       { name: 'الطلاب', rows: st, widths: [14, 28, 12, 18, 10, 9, 8, 8, 10, 11, 14, 12] },
       { name: 'الملاحظات', rows: ins, widths: [120] }
     ]));
@@ -2267,8 +2408,8 @@
       s.addText(bd(STSUB), T({ x: 0.5, y: 3.7, w: 12.33, h: 0.6, fontSize: 15, color: 'FFFFFF', align: 'center' }));
       s = p.addSlide(); head(s, 'المؤشرات الرئيسية');
       var noLim = (r.quality && r.quality.noLimit || []).length >= ((r.quality && r.quality.groups) || 1);
-      var K = [['المسجلون', o.students], ['أيام منعقدة', o.sessions], ['نسبة الحضور', pv(o.pct)], ['الالتزام بالمواعيد', noLim ? '—' : pv(o.commit)],
-        ['تأخير من الحاضرين', noLim ? '—' : pv(o.latePct)], ['مرات الغياب', o.absent], ['طلاب تحت 75%', o.under75], ['حضور كامل 100%', o.perfect]];
+      var K = [['المسجلون', o.students], ['عدد الأسابيع', r.weeksSpan], ['أيام منعقدة', r.sessionDates], ['نسبة الحضور', pv(o.pct)], ['الالتزام بالمواعيد', noLim ? '—' : pv(o.commit)],
+        ['تأخير من الحاضرين', noLim ? '—' : pv(o.latePct)], ['طلاب تحت 75%', o.under75], ['حضور كامل 100%', o.perfect]];
       K.forEach(function (k, i) {
         var x = 13.33 - 0.3 - (i % 4 + 1) * 3.1, y = 1.4 + Math.floor(i / 4) * 2.6;     // أول مؤشر على اليمين
         s.addText([{ text: bd(String(k[1])), options: { fontSize: 34, bold: true, color: M, breakLine: true } }, { text: bd(k[0]), options: { fontSize: 15, color: '555555' } }],
@@ -2277,7 +2418,7 @@
       s = p.addSlide(); head(s, 'أهم الملاحظات والتوصيات');
       s.addText(insights(r).map(function (x) { return { text: bd(x[1]), options: { bullet: true, rtlMode: true, align: 'right', color: x[0] === 'bad' ? 'B3261E' : x[0] === 'good' ? '1E7B46' : '2B2224', breakLine: true } }; }),
         T({ x: 0.6, y: 1.2, w: 12.1, h: 5.7, fontSize: 16, align: 'right', valign: 'top', paraSpaceAfter: 8 }));
-      CHORDER.forEach(function (id) {
+      CHORDER.filter(function (id) { return SPECS[id] || id.indexOf('heat') === 0; }).forEach(function (id) {
         var im = imgOf(id); s = p.addSlide(); head(s, CHT[id] || '');
         var bw = 12.5, bh = 5.95, ratio = im.w / im.h, w = bw, h = w / ratio;
         if (h > bh) { h = bh; w = h * ratio; }
@@ -2287,6 +2428,45 @@
     }).then(function () { b.disabled = false; b.textContent = '📽 PowerPoint'; toast('✔ تم تنزيل ملف PowerPoint', 'ok'); })
       .catch(function (e) { b.disabled = false; b.textContent = '📽 PowerPoint'; stMsg('err', errText(e)); });
   }
+  /* ---------- 🗓 الإجازات (أدمن) ---------- */
+  function holMsg(type, t) { var m = $('holMsg'); m.className = 'msg ' + (type || ''); m.textContent = t || ''; show(m, !!t); }
+  function renderHolidays(list) {
+    var h = '<thead><tr><th>من</th><th>إلى</th><th>النطاق</th><th>السبب</th><th>أضافها</th><th></th></tr></thead><tbody>';
+    if (!list.length) h += '<tr><td colspan="6" style="text-align:center">مفيش إجازات متسجلة</td></tr>';
+    list.slice().sort(function (a, b) { return a.from < b.from ? 1 : -1; }).forEach(function (x) {
+      h += '<tr><td>' + esc(bd(fd(x.from))) + '</td><td>' + esc(x.to !== x.from ? bd(fd(x.to)) : '—') + '</td><td>' + esc(bd(x.scope)) + '</td><td>' + esc(x.reason || '') + '</td><td style="font-size:11px">' + esc(x.by || '') +
+        '</td><td><button class="mini" type="button" data-hrow="' + x.row + '" data-hfrom="' + esc(x.from) + '">🗑</button></td></tr>';
+    });
+    $('holTbl').innerHTML = h + '</tbody>';
+    [].forEach.call($('holTbl').querySelectorAll('[data-hrow]'), function (b) {
+      b.addEventListener('click', function () {
+        if (!confirm('حذف الإجازة دي؟')) return;
+        var btn = this; btn.disabled = true;
+        api('holidayDelete', { row: Number(btn.getAttribute('data-hrow')), from: btn.getAttribute('data-hfrom') }).then(function (r) {
+          if (!r || !r.ok) { btn.disabled = false; holMsg('err', r ? r.message : 'خطأ'); return; }
+          holMsg('ok', r.message); renderHolidays(r.list); ST = null;
+        }).catch(function (e) { btn.disabled = false; holMsg('err', errText(e)); });
+      });
+    });
+  }
+  function loadHolidays() {
+    api('holidays').then(function (r) {
+      if (!r || !r.ok) { holMsg('err', r ? (r.code === 'BAD_ACTION' ? 'الخادم قديم: انشر Code.gs 4.8.' : r.message) : 'خطأ'); return; }
+      var sel = $('holScope'); sel.innerHTML = '';
+      r.scopes.forEach(function (s) { var o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
+      renderHolidays(r.list); holMsg('', '');
+    }).catch(function (e) { holMsg('err', errText(e)); });
+  }
+  $('holAdd').addEventListener('click', function () {
+    var f = $('holFrom').value, t = $('holTo').value;
+    if (!f) { holMsg('err', 'اختر تاريخ الإجازة.'); return; }
+    var b = this; b.disabled = true;
+    api('holidayAdd', { h: { from: f, to: t, scope: $('holScope').value, reason: $('holReason').value } }).then(function (r) {
+      b.disabled = false;
+      if (!r || !r.ok) { holMsg('err', r ? r.message : 'خطأ'); return; }
+      holMsg('ok', r.message); renderHolidays(r.list); $('holFrom').value = ''; $('holTo').value = ''; $('holReason').value = ''; ST = null;
+    }).catch(function (e) { b.disabled = false; holMsg('err', errText(e)); });
+  });
 
   /* ---------- boot ---------- */
   loadSaved();
